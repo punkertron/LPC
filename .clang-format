@@ -1,0 +1,23 @@
+BasedOnStyle: google
+IndentWidth: 4
+ColumnLimit: 125
+AllowShortBlocksOnASingleLine: Never
+AlignArrayOfStructures: Left
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLambdasOnASingleLine: Empty
+AllowShortLoopsOnASingleLine: false
+AllowShortEnumsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: None
+PackConstructorInitializers: NextLine
+BreakConstructorInitializers: AfterColon
+AccessModifierOffset: -4
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: false
+  AfterControlStatement: false
+  AfterEnum: false
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: false
+  BeforeElse: false
+  BeforeCatch: false
