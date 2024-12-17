@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -11,15 +10,15 @@
 
 class Board {
 private:
-    std::array<std::array<std::shared_ptr<Piece>, 8>, 8> board_;
-    std::unordered_map<Position, std::vector<Move> > validMoves_;
+    std::vector<std::vector<std::shared_ptr<Piece>>> board_;
+    std::unordered_map<Position, std::vector<Move>> validMoves_;
     COLOUR currentMove_{COLOUR::WHITE};
 
     bool isWithinBoard(const Position& p) const;
     void addOneStepMoves(const Position& p, std::vector<Move>& res) const;
     void addBeatMoves(const Position& p, std::vector<Move>& res) const;
     void generateValidMoves();
-    void findCaptures(const Position& p, std::array<std::array<std::shared_ptr<Piece>, 8>, 8>& boardCopy,
+    void findCaptures(const Position& p, std::vector<std::vector<std::shared_ptr<Piece>>>& boardCopy,
                       std::vector<Move>& moves) const;
 
 public:
@@ -28,4 +27,5 @@ public:
     void printBoard() const;  // debug only
     std::vector<Move> generateValidMoves(const Position& p) const;
     void makeMove(const Move& m);
+    std::vector<std::vector<std::shared_ptr<Piece>>> getBoard() const;
 };

@@ -5,9 +5,15 @@
 struct Position {
     int row;
     int col;
+
     bool operator==(const Position& other) const
     {
         return row == other.row && col == other.col;
+    }
+
+    bool isValid() const
+    {
+        return row >= 0 && col >= 0;
     }
 };
 
@@ -25,6 +31,6 @@ struct hash<Position> {
 struct Move {
     Position from;
     Position to;
-    bool isComplex{false};           // if there are beat moves
+    Position beatenPiecePos{-1, -1};
     std::shared_ptr<Move> nextMove;  // next move in the chains of moves
 };

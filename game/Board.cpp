@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-Board::Board()
+Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
 {
     for (int i = 0; i < 3; ++i) {
         for (int j = 0 + i % 2; j < board_[0].size(); j += 2) {
@@ -19,6 +19,7 @@ Board::Board()
     // FIXME: remove these lines
     board_[0][4] = nullptr;
     board_[0][0] = nullptr;
+    generateValidMoves();
 }
 
 void Board::printBoard() const
@@ -78,7 +79,7 @@ static constexpr std::vector<std::pair<int, int>> getMoveDirections()
     };
 }
 
-void Board::findCaptures(const Position& p, std::array<std::array<std::shared_ptr<Piece>, 8>, 8>& boardCopy,
+void Board::findCaptures(const Position& p, std::vector<std::vector<std::shared_ptr<Piece>>>& boardCopy,
                          std::vector<Move>& moves) const
 {
     auto cell = boardCopy[p.row][p.col];
@@ -102,9 +103,9 @@ void Board::findCaptures(const Position& p, std::array<std::array<std::shared_pt
                     // TODO: handle promotion to the QUEEN
 
                     auto newMove = Move{
-                        .from = Position{p.row, p.col},
-                        .to = Position{landingRow, landingCol},
-                        .isComplex{true},
+                        .from{p.row, p.col},
+                        .to{landingRow, landingCol},
+                        .beatenPiecePos{enemyRow, enemyCol},
                         .nextMove{nullptr}
                     };
                     std::vector<Move> furtherMoves;
@@ -151,9 +152,14 @@ std::vector<Move> Board::generateValidMoves(const Position& p) const
 
 void Board::makeMove(const Move& m)
 {
-    if (!m.isComplex) {
-        std::swap(board_[m.to.row][m.to.col], board_[m.from.row][m.from.col]);
-    }
+    const Move* move = &m;  // Use a raw pointer for the first move
+    do {
+        if (move->beatenPiecePos.isValid())
+            board_[move->beatenPiecePos.row][move->beatenPiecePos.col] = nullptr;
+        std::swap(board_[move->to.row][move->to.col], board_[move->from.row][move->from.col]);
+        move = move->nextMove.get();  // Get the raw pointer from the shared_ptr
+    } while (move);
+
     generateValidMoves();
 }
 
@@ -169,10 +175,7 @@ void Board::generateValidMoves()
                     std::vector<Move> moves;
                     addMovesFunc({i, j}, moves);
                     if (!moves.empty()) {
-                        validMoves_.insert({
-                            {i, j},
-                            std::move(moves)
-                        });
+                        validMoves_.emplace(Position{i, j}, std::move(moves));
                     }
                 }
             }
@@ -190,4 +193,9 @@ void Board::generateValidMoves()
             addOneStepMoves(pos, moves);
         });
     }
+}
+
+std::vector<std::vector<std::shared_ptr<Piece>>> Board::getBoard() const
+{
+    return board_;
 }
