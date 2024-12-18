@@ -15,7 +15,7 @@ private:
 
 public:
     static constexpr int WINDOW_WIDTH{600};
-    static constexpr int WINDOW_HEIGHT{600};
+    static constexpr int BOARD_SIZE{8};  // ???
 
     Game();
 

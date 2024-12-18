@@ -2,16 +2,15 @@
 
 #include "PlayState.hpp"
 
-Game::Game() :
-    window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_HEIGHT), "Checkers Client!", sf::Style::Titlebar | sf::Style::Close}
+Game::Game() : window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_WIDTH), "Checkers Client!", sf::Style::Titlebar | sf::Style::Close}
 {
     // Calculate the position to the center of Desktop
     sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
     auto screenWidth = desktopMode.width;
     auto screenHeight = desktopMode.height;
     auto windowPosX = (screenWidth - WINDOW_WIDTH) / 2;
-    auto windowPosY = (screenHeight - WINDOW_HEIGHT) / 2;
-    if (screenWidth > WINDOW_WIDTH && screenHeight > WINDOW_HEIGHT) {
+    auto windowPosY = (screenHeight - WINDOW_WIDTH) / 2;
+    if (screenWidth > WINDOW_WIDTH && screenHeight > WINDOW_WIDTH) {
         // strange if not true, but who knows
         window_.setPosition(sf::Vector2i(windowPosX, windowPosY));
     }

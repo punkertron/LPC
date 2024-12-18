@@ -1,8 +1,8 @@
 #include "PlayState.hpp"
 
-constexpr int WIDTH = 600;
-constexpr int BOARD_SIZE = 8;
-constexpr int TILE = 600 / BOARD_SIZE;
+#include "Game.hpp"
+
+constexpr int TILE = Game::WINDOW_WIDTH / Game::BOARD_SIZE;
 constexpr float PIECE_RADIUS = (TILE - 20) / 2.0f;
 const sf::Color LIGHT_COLOR = sf::Color(240, 217, 181);
 const sf::Color DARK_COLOR = sf::Color(181, 136, 99);
@@ -24,9 +24,9 @@ void PlayState::update()
 
 void PlayState::render()
 {
-    for (int row = 0; row < BOARD_SIZE; ++row) {
+    for (int row = 0; row < Game::BOARD_SIZE; ++row) {
         int realRow = 7 - row;
-        for (int col = 0; col < BOARD_SIZE; ++col) {
+        for (int col = 0; col < Game::BOARD_SIZE; ++col) {
             sf::RectangleShape square{
                 sf::Vector2f{TILE, TILE}
             };
