@@ -1,5 +1,8 @@
 set(GUI_FILES
     main.cpp
+    Game.cpp
+    StateManager.cpp
+    PlayState.cpp
 )
 
 add_executable(${PROJECT_NAME} ${GUI_FILES})
