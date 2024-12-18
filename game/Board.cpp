@@ -5,26 +5,26 @@
 Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
 {
     for (int i = 0; i < 3; ++i) {
-        for (int j = 0 + i % 2; j < board_[0].size(); j += 2) {
-            board_[i][j] = std::make_shared<Piece>(PIECE_TYPE::REGULAR, COLOUR::WHITE);
-        }
-    }
-
-    for (int i = 5; i < board_.size(); ++i) {
-        for (int j = 0 + i % 2; j < board_[0].size(); j += 2) {
+        for (int j = (i % 2 ? 0 : 1); j < board_[0].size(); j += 2) {
             board_[i][j] = std::make_shared<Piece>(PIECE_TYPE::REGULAR, COLOUR::BLACK);
         }
     }
 
+    for (int i = 5; i < board_.size(); ++i) {
+        for (int j = (i % 2 ? 0 : 1); j < board_[0].size(); j += 2) {
+            board_[i][j] = std::make_shared<Piece>(PIECE_TYPE::REGULAR, COLOUR::WHITE);
+        }
+    }
+
     // FIXME: remove these lines
-    board_[0][4] = nullptr;
-    board_[0][0] = nullptr;
+    board_[6][1] = nullptr;
+    board_[7][0] = nullptr;
     generateValidMoves();
 }
 
 void Board::printBoard() const
 {
-    for (int i = 7; i >= 0; --i) {
+    for (int i = 0; i >= board_.size(); ++i) {
         for (int j = 0; j < board_[0].size(); ++j) {
             if (board_[i][j]) {
                 std::cout << board_[i][j]->getPieceCode() << ' ';
@@ -41,7 +41,7 @@ void Board::addOneStepMoves(const Position& p, std::vector<Move>& res) const
 {
     // check left and right moves for both sides
     COLOUR c = board_[p.row][p.col]->getColour();
-    if (c == COLOUR::WHITE) {
+    if (c == COLOUR::BLACK) {
         if (p.row + 1 < board_.size()) {
             int newRow = p.row + 1;
             if (p.col + 1 < board_[0].size() && !board_[newRow][p.col + 1]) {
