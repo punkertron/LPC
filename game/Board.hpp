@@ -12,7 +12,7 @@ class Board {
 private:
     std::vector<std::vector<std::shared_ptr<Piece>>> board_;
     std::unordered_map<Position, std::vector<Move>> validMoves_;
-    COLOUR currentMove_{COLOUR::WHITE};
+    COLOUR currentColour_{COLOUR::WHITE};
 
     bool isWithinBoard(const Position& p) const;
     void addOneStepMoves(const Position& p, std::vector<Move>& res) const;
@@ -28,4 +28,10 @@ public:
     std::vector<Move> generateValidMoves(const Position& p) const;
     void makeMove(const Move& m);
     std::vector<std::vector<std::shared_ptr<Piece>>> getBoard() const;
+
+    struct GameResult {
+        bool isOver;
+        COLOUR winner;
+    };
+    GameResult getResult() const;
 };

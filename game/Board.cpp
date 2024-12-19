@@ -1,6 +1,7 @@
 #include "Board.hpp"
 
 #include <algorithm>
+#include <stdexcept>
 
 Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
 {
@@ -152,6 +153,10 @@ std::vector<Move> Board::generateValidMoves(const Position& p) const
 
 void Board::makeMove(const Move& m)
 {
+    if (board_[m.from.row][m.from.col]->getColour() != currentColour_) {
+        throw std::logic_error("Wrong colour! White must do one move, and then black must do one move");
+    }
+
     const Move* move = &m;  // Use a raw pointer for the first move
     do {
         if (move->beatenPiecePos.isValid())
@@ -160,6 +165,11 @@ void Board::makeMove(const Move& m)
         move = move->nextMove.get();  // Get the raw pointer from the shared_ptr
     } while (move);
 
+    if (currentColour_ == COLOUR::WHITE) {
+        currentColour_ = COLOUR::BLACK;
+    } else {
+        currentColour_ = COLOUR::WHITE;
+    }
     generateValidMoves();
 }
 
@@ -171,7 +181,7 @@ void Board::generateValidMoves()
     auto processMoves = [&](auto addMovesFunc) {
         for (int i = 0; i < board_.size(); ++i) {
             for (int j = 0; j < board_.size(); ++j) {
-                if (auto cell = board_[i][j]; cell) {
+                if (auto cell = board_[i][j]; cell && cell->getColour() == currentColour_) {
                     std::vector<Move> moves;
                     addMovesFunc({i, j}, moves);
                     if (!moves.empty()) {
@@ -198,4 +208,12 @@ void Board::generateValidMoves()
 std::vector<std::vector<std::shared_ptr<Piece>>> Board::getBoard() const
 {
     return board_;
+}
+
+Board::GameResult Board::getResult() const
+{
+    if (validMoves_.empty()) {
+        return {true, currentColour_ == COLOUR::WHITE ? COLOUR::BLACK : COLOUR::WHITE};
+    }
+    return {false, COLOUR::WHITE};
 }
