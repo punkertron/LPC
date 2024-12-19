@@ -15,11 +15,15 @@ private:
     COLOUR currentColour_{COLOUR::WHITE};
 
     bool isWithinBoard(const Position& p) const;
-    void addOneStepMoves(const Position& p, std::vector<Move>& res) const;
-    void addBeatMoves(const Position& p, std::vector<Move>& res) const;
     void generateValidMoves();
-    void findCaptures(const Position& p, std::vector<std::vector<std::shared_ptr<Piece>>>& boardCopy,
+    void addBeatMoves(const Position& p, std::vector<Move>& res) const;
+    void findCaptures(const Position& initial, std::vector<std::vector<std::shared_ptr<Piece>>>& boardCopy,
                       std::vector<Move>& moves) const;
+    void processCapture(const Position& initial, const Position& enemy, const Position& landing,
+                        std::vector<std::vector<std::shared_ptr<Piece>>>& boardCopy, std::vector<Move>& moves) const;
+    void addNonBeatMoves(const Position& p, std::vector<Move>& res) const;
+    void addOneStepMoves(const Position& p, std::vector<Move>& res) const;
+    void addQueenNonBeatMoves(const Position& p, std::vector<Move>& res) const;
 
 public:
     Board();

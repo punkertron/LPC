@@ -46,4 +46,9 @@ public:
     {
         return c_;
     }
+
+    void setPieceType(PIECE_TYPE type)
+    {
+        t_ = type;
+    }
 };
