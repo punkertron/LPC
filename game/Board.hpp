@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -28,7 +27,6 @@ private:
 public:
     Board();
 
-    void printBoard() const;  // debug only
     std::vector<Move> generateValidMoves(const Position& p) const;
     void makeMove(const Move& m);
     std::vector<std::vector<std::shared_ptr<Piece>>> getBoard() const;

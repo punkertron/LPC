@@ -20,21 +20,6 @@ Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
     generateValidMoves();
 }
 
-void Board::printBoard() const
-{
-    for (int i = 0; i >= board_.size(); ++i) {
-        for (int j = 0; j < board_[0].size(); ++j) {
-            if (board_[i][j]) {
-                std::cout << board_[i][j]->getPieceCode() << ' ';
-            } else {
-                std::cout << 0 << ' ';
-            }
-        }
-        std::cout << '\n';
-    }
-    std::cout << "----------------\n";
-}
-
 std::vector<Move> Board::generateValidMoves(const Position& p) const
 {
     if (auto it = validMoves_.find(p); it != validMoves_.end()) {
