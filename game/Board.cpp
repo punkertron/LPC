@@ -170,14 +170,16 @@ void Board::findCaptures(const Position& initial, std::vector<std::vector<std::s
                 }
             }
         } else {  // PIECE_TYPE::QUEEN
-            for (int enemyRow = initial.row + dr, enemyCol = initial.col + dc; isWithinBoard({enemyRow, enemyCol});
-                 enemyRow += dr, enemyCol += dc) {
+            bool isNextPieceFound = false;
+            for (int enemyRow = initial.row + dr, enemyCol = initial.col + dc;
+                 !isNextPieceFound && isWithinBoard({enemyRow, enemyCol}); enemyRow += dr, enemyCol += dc) {
                 if (!boardCopy[enemyRow][enemyCol]) {
                     continue;
                 }
                 if (boardCopy[enemyRow][enemyCol]->getColour() == cell->getColour()) {
                     break;
                 }
+                isNextPieceFound = true;
 
                 for (int landingRow = enemyRow + dr, landingCol = enemyCol + dc; isWithinBoard({landingRow, landingCol});
                      landingRow += dr, landingCol += dc) {
