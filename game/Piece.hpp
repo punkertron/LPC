@@ -4,7 +4,8 @@
 
 enum class PIECE_TYPE {
     REGULAR,
-    QUEEN
+    QUEEN,
+    CAPTURED
 };
 
 static const std::unordered_map<PIECE_TYPE, int> pieceTypeMap{

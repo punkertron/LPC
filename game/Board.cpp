@@ -161,7 +161,8 @@ void Board::findCaptures(const Position& initial, std::vector<std::vector<std::s
 
         if (cell->getPieceType() == PIECE_TYPE::REGULAR) {
             if (isWithinBoard({enemyRow, enemyCol}) && boardCopy[enemyRow][enemyCol] &&
-                boardCopy[enemyRow][enemyCol]->getColour() != cell->getColour()) {
+                boardCopy[enemyRow][enemyCol]->getColour() != cell->getColour() &&
+                boardCopy[enemyRow][enemyCol]->getPieceType() != PIECE_TYPE::CAPTURED) {
                 int landingRow = enemyRow + dr;
                 int landingCol = enemyCol + dc;
 
@@ -176,7 +177,8 @@ void Board::findCaptures(const Position& initial, std::vector<std::vector<std::s
                 if (!boardCopy[enemyRow][enemyCol]) {
                     continue;
                 }
-                if (boardCopy[enemyRow][enemyCol]->getColour() == cell->getColour()) {
+                if (boardCopy[enemyRow][enemyCol]->getColour() == cell->getColour() ||
+                    boardCopy[enemyRow][enemyCol]->getPieceType() == PIECE_TYPE::CAPTURED) {
                     break;
                 }
                 isNextPieceFound = true;
@@ -189,6 +191,10 @@ void Board::findCaptures(const Position& initial, std::vector<std::vector<std::s
 
                     processCapture(initial, {enemyRow, enemyCol}, {landingRow, landingCol}, boardCopy, moves);
                 }
+                // imagine sutution: queen captures one piece and can capture second piece
+                //   or can move further without capturing. The scond situation is not correct,
+                //   so we remove such moves
+                removeQueenWrongMoves(initial, {enemyRow, enemyCol}, moves);
             }
         }
     }
@@ -199,7 +205,7 @@ void Board::processCapture(const Position& initial, const Position& enemy, const
 {
     auto newBoardCopy = createBoardCopy(boardCopy);
     std::swap(newBoardCopy[landing.row][landing.col], newBoardCopy[initial.row][initial.col]);
-    newBoardCopy[enemy.row][enemy.col] = nullptr;
+    newBoardCopy[enemy.row][enemy.col]->setPieceType(PIECE_TYPE::CAPTURED);
 
     if (newBoardCopy[landing.row][landing.col]->getPieceType() == PIECE_TYPE::REGULAR) {
         auto colour = newBoardCopy[landing.row][landing.col]->getColour();
@@ -227,6 +233,40 @@ void Board::processCapture(const Position& initial, const Position& enemy, const
         // No further captures, add the current move
         moves.push_back(newMove);
     };
+}
+
+void Board::removeQueenWrongMoves(const Position& initial, const Position& enemy, std::vector<Move>& moves) const
+{
+    bool nextBeatMoveExists{false};
+
+    for (const auto& m : moves) {
+        const Move* move = &m;
+        do {
+            if (move->from == initial && move->beatenPiecePos == enemy && move->nextMove) {
+                nextBeatMoveExists = true;
+                break;
+            }
+            move = move->nextMove.get();
+        } while (move);
+        if (nextBeatMoveExists) {
+            break;
+        }
+    }
+
+    if (nextBeatMoveExists) {
+        moves.erase(std::remove_if(moves.begin(), moves.end(),
+                                   [&initial, &enemy](const Move& m) {
+                                       const Move* move = &m;
+                                       do {
+                                           if (move->from == initial && move->beatenPiecePos == enemy && !move->nextMove) {
+                                               return true;
+                                           }
+                                           move = move->nextMove.get();
+                                       } while (move);
+                                       return false;
+                                   }),
+                    moves.end());
+    }
 }
 
 void Board::addNonBeatMoves(const Position& p, std::vector<Move>& res) const

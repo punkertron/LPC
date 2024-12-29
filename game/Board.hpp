@@ -20,6 +20,7 @@ private:
                       std::vector<Move>& moves) const;
     void processCapture(const Position& initial, const Position& enemy, const Position& landing,
                         std::vector<std::vector<std::shared_ptr<Piece>>>& boardCopy, std::vector<Move>& moves) const;
+    void removeQueenWrongMoves(const Position& initial, const Position& enemy, std::vector<Move>& moves) const;
     void addNonBeatMoves(const Position& p, std::vector<Move>& res) const;
     void addOneStepMoves(const Position& p, std::vector<Move>& res) const;
     void addQueenNonBeatMoves(const Position& p, std::vector<Move>& res) const;
