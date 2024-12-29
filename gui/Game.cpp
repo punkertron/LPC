@@ -18,7 +18,7 @@ Game::Game() : window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_WIDTH), "Checkers Clie
     window_.setFramerateLimit(50);
 
     // TODO: add menu
-    stateManager_.registerState(STATE_TYPE::PlayState, std::make_unique<PlayState>(window_));
+    stateManager_.registerState(STATE_TYPE::PlayState, std::make_unique<PlayState>(window_, resourceManager_));
     stateManager_.setActiveState(STATE_TYPE::PlayState);
 }
 
@@ -26,8 +26,8 @@ void Game::run()
 {
     while (window_.isOpen()) {
         processEvents();
-        update();
         render();
+        update();
     }
 }
 

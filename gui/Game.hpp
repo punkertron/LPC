@@ -2,12 +2,14 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "ResourceManager.hpp"
 #include "StateManager.hpp"
 
 class Game final {
 private:
     sf::RenderWindow window_;
     StateManager stateManager_;
+    ResourceManager resourceManager_;
 
     void processEvents();
     void update();

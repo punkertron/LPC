@@ -2,12 +2,15 @@
 
 #include <SFML/Graphics.hpp>
 
+#include "ResourceManager.hpp"
+
 class State {
 protected:
     sf::RenderWindow& window_;
+    ResourceManager& resourceManager_;
 
 public:
-    State(sf::RenderWindow& window) : window_{window}
+    State(sf::RenderWindow& window, ResourceManager& resourceManager) : window_{window}, resourceManager_{resourceManager}
     {
     }
 
