@@ -28,7 +28,8 @@ private:
 public:
     Board();
 
-    std::vector<Move> generateValidMoves(const Position& p) const;
+    std::vector<Move> getValidMoves(const Position& p) const;
+    std::unordered_map<Position, std::vector<Move>> getValidMoves() const;
     void makeMove(const Move& m);
     std::vector<std::vector<std::shared_ptr<Piece>>> getBoard() const;
 

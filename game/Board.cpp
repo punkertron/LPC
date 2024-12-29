@@ -20,12 +20,17 @@ Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
     generateValidMoves();
 }
 
-std::vector<Move> Board::generateValidMoves(const Position& p) const
+std::vector<Move> Board::getValidMoves(const Position& p) const
 {
     if (auto it = validMoves_.find(p); it != validMoves_.end()) {
         return it->second;
     }
     return {};
+}
+
+std::unordered_map<Position, std::vector<Move>> Board::getValidMoves() const
+{
+    return validMoves_;
 }
 
 void Board::makeMove(const Move& m)
