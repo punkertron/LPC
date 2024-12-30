@@ -56,30 +56,32 @@ bool PlayState::isOneWayTo(Position to)
 
 void PlayState::handleEvent(const sf::Event& event)
 {
-    if (event.type == sf::Event::MouseButtonPressed) {
-        if (event.mouseButton.button == sf::Mouse::Left) {
-            int x = event.mouseButton.x;
-            int y = event.mouseButton.y;
+    if (board_.getCurrentColour() == playerColor_) {
+        if (event.type == sf::Event::MouseButtonPressed) {
+            if (event.mouseButton.button == sf::Mouse::Left) {
+                int x = event.mouseButton.x;
+                int y = event.mouseButton.y;
 
-            if (!isSquareSelected_) {
-                lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
-                possibleMoves_ = board_.generateValidMoves(lastSelectedPosition_);
-                if (possibleMoves_.empty()) {
-                    return;
-                }
-                isSquareSelected_ = true;
-            } else {
-                auto pos = getPositionOnBoardFromMouse(x, y);
-                if (pos == lastSelectedPosition_) {
-                    isSquareSelected_ = false;
-                    possibleMoves_.clear();
-                } else if (isPositionInsidePossibleMoves(pos)) {
-                    isMoveInProcess_ = true;
-                    makeMoveTo_ = pos;
-                    isUniqueWayToNewPosition_ = isOneWayTo(pos);
-                } else {
+                if (!isSquareSelected_) {
                     lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
-                    possibleMoves_ = board_.generateValidMoves(lastSelectedPosition_);
+                    possibleMoves_ = board_.getValidMoves(lastSelectedPosition_);
+                    if (possibleMoves_.empty()) {
+                        return;
+                    }
+                    isSquareSelected_ = true;
+                } else {
+                    auto pos = getPositionOnBoardFromMouse(x, y);
+                    if (pos == lastSelectedPosition_) {
+                        isSquareSelected_ = false;
+                        possibleMoves_.clear();
+                    } else if (isPositionInsidePossibleMoves(pos)) {
+                        isMoveInProcess_ = true;
+                        makeMoveTo_ = pos;
+                        isUniqueWayToNewPosition_ = isOneWayTo(pos);
+                    } else {
+                        lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
+                        possibleMoves_ = board_.getValidMoves(lastSelectedPosition_);
+                    }
                 }
             }
         }
@@ -88,6 +90,17 @@ void PlayState::handleEvent(const sf::Event& event)
 
 void PlayState::update()
 {
+    if (board_.getCurrentColour() != playerColor_ && !isMoveInProcess_) {
+        oneWayMove_ = engine_->getBestMove();
+        isMoveInProcess_ = true;
+        isUniqueWayToNewPosition_ = true;
+        lastSelectedPosition_ = oneWayMove_.from;
+        Move* ptr = &oneWayMove_;
+        while (ptr->nextMove) {
+            ptr = ptr->nextMove.get();
+        }
+        makeMoveTo_ = ptr->to;
+    }
 }
 
 void PlayState::drawBoard()

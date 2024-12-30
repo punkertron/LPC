@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Board.hpp"
+#include "Engine.hpp"
+#include "RandomEngine.hpp"
 #include "ResourceManager.hpp"
 #include "State.hpp"
 
@@ -16,6 +18,10 @@ private:
     float movePosition_{0.f};
     Move oneWayMove_;
     std::vector<Move> possibleMoves_;
+
+    // engine related
+    COLOUR playerColor_{COLOUR::WHITE};
+    std::unique_ptr<Engine> engine_ = std::make_unique<RandomEngine>(board_);
 
     Position getPositionOnBoardFromMouse(int x, int y);
     void drawBoard();
