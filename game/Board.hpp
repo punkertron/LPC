@@ -32,6 +32,7 @@ public:
     std::unordered_map<Position, std::vector<Move>> getValidMoves() const;
     void makeMove(const Move& m);
     std::vector<std::vector<std::shared_ptr<Piece>>> getBoard() const;
+    COLOUR getCurrentColour() const;
 
     struct GameResult {
         bool isOver;

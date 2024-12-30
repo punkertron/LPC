@@ -85,6 +85,11 @@ std::vector<std::vector<std::shared_ptr<Piece>>> Board::getBoard() const
     return createBoardCopy(board_);
 }
 
+COLOUR Board::getCurrentColour() const
+{
+    return currentColour_;
+}
+
 Board::GameResult Board::getResult() const
 {
     if (validMoves_.empty()) {
