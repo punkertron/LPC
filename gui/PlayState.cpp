@@ -13,7 +13,7 @@ const sf::Color highlightColor(0, 255, 0, 150);  // Semi-transparent green
 
 PlayState::PlayState(sf::RenderWindow& window, ResourceManager& resourceManager) : State{window, resourceManager}
 {
-    copyBoard_ = board_.getBoard();
+    copyBoard_ = board_.getCopyBoard();
 }
 
 Position PlayState::getPositionOnBoardFromMouse(int x, int y)
@@ -162,7 +162,8 @@ void PlayState::processMove()
     if (!isMoveInProcess_ && isUniqueWayToNewPosition_) {
         isUniqueWayToNewPosition_ = false;
         board_.makeMove(oneWayMove_);
-        copyBoard_ = board_.getBoard();
+        copyBoard_ = board_.getCopyBoard();
+        copyBoard_[0][0] = nullptr;
         isSquareSelected_ = false;
         possibleMoves_.clear();
     }

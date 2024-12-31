@@ -27,11 +27,13 @@ private:
 
 public:
     Board();
+    Board(const Board& other);
 
     std::vector<Move> getValidMoves(const Position& p) const;
-    std::unordered_map<Position, std::vector<Move>> getValidMoves() const;
+    const std::unordered_map<Position, std::vector<Move>>& getValidMoves() const;
     void makeMove(const Move& m);
-    std::vector<std::vector<std::shared_ptr<Piece>>> getBoard() const;
+    const std::vector<std::vector<std::shared_ptr<Piece>>>& getBoard() const;
+    std::vector<std::vector<std::shared_ptr<Piece>>> getCopyBoard() const;
     COLOUR getCurrentColour() const;
 
     struct GameResult {

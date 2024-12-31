@@ -1,4 +1,6 @@
 set(SRC_FILES
+    EvaluationFunction.cpp    
+    MinimaxEngine.cpp
     RandomEngine.cpp
 )
 

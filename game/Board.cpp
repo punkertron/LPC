@@ -20,6 +20,10 @@ Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
     generateValidMoves();
 }
 
+Board::Board(const Board& other) : board_{other.getCopyBoard()}, currentColour_{other.getCurrentColour()}
+{
+}
+
 std::vector<Move> Board::getValidMoves(const Position& p) const
 {
     if (auto it = validMoves_.find(p); it != validMoves_.end()) {
@@ -28,7 +32,7 @@ std::vector<Move> Board::getValidMoves(const Position& p) const
     return {};
 }
 
-std::unordered_map<Position, std::vector<Move>> Board::getValidMoves() const
+const std::unordered_map<Position, std::vector<Move>>& Board::getValidMoves() const
 {
     return validMoves_;
 }
@@ -80,7 +84,12 @@ static std::vector<std::vector<std::shared_ptr<Piece>>> createBoardCopy(
     return deepCopiedVec;
 }
 
-std::vector<std::vector<std::shared_ptr<Piece>>> Board::getBoard() const
+const std::vector<std::vector<std::shared_ptr<Piece>>>& Board::getBoard() const
+{
+    return board_;
+}
+
+std::vector<std::vector<std::shared_ptr<Piece>>> Board::getCopyBoard() const
 {
     return createBoardCopy(board_);
 }

@@ -2,6 +2,7 @@
 
 #include "Board.hpp"
 #include "Engine.hpp"
+#include "MinimaxEngine.hpp"
 #include "RandomEngine.hpp"
 #include "ResourceManager.hpp"
 #include "State.hpp"
@@ -21,7 +22,7 @@ private:
 
     // engine related
     COLOUR playerColor_{COLOUR::WHITE};
-    std::unique_ptr<Engine> engine_ = std::make_unique<RandomEngine>(board_);
+    std::unique_ptr<Engine> engine_ = std::make_unique<MinimaxEngine>(board_, ENGINE_MODE::EASY);
 
     Position getPositionOnBoardFromMouse(int x, int y);
     void drawBoard();
