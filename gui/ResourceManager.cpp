@@ -13,6 +13,8 @@
 #endif
 
 constexpr std::string QUEEN_TEXTURE_FILENAME = "queen.png";
+constexpr std::string YOULOST_TEXTURE_FILENAME = "you_lost.png";
+constexpr std::string YOUWIN_TEXTURE_FILENAME = "you_win.png";
 
 static std::filesystem::path getExecutablePath()
 {
@@ -40,8 +42,19 @@ static std::filesystem::path getExecutablePath()
 ResourceManager::ResourceManager()
 {
     auto exeDir = getExecutablePath();
+
     auto texturePath = exeDir / QUEEN_TEXTURE_FILENAME;
     if (!queen_.loadFromFile(texturePath.string())) {
+        throw std::runtime_error("Unable to load queen texture");
+    }
+
+    texturePath = exeDir / YOULOST_TEXTURE_FILENAME;
+    if (!youLost_.loadFromFile(texturePath.string())) {
+        throw std::runtime_error("Unable to load queen texture");
+    }
+
+    texturePath = exeDir / YOUWIN_TEXTURE_FILENAME;
+    if (!youWin_.loadFromFile(texturePath.string())) {
         throw std::runtime_error("Unable to load queen texture");
     }
 }
@@ -49,4 +62,14 @@ ResourceManager::ResourceManager()
 sf::Texture& ResourceManager::getQueenTexture()
 {
     return queen_;
+}
+
+sf::Texture& ResourceManager::getYouLostTexture()
+{
+    return youLost_;
+}
+
+sf::Texture& ResourceManager::getYouWinTexture()
+{
+    return youWin_;
 }

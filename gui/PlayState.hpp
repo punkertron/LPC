@@ -16,12 +16,13 @@ private:
     bool isSquareSelected_{false};
     bool isMoveInProcess_{false};
     bool isUniqueWayToNewPosition_{false};
+    bool isGameOver_{false};
     float movePosition_{0.f};
     Move oneWayMove_;
     std::vector<Move> possibleMoves_;
 
-    // engine related
     COLOUR playerColor_{COLOUR::WHITE};
+    COLOUR winnerColor_;
     std::unique_ptr<Engine> engine_ = std::make_unique<MinimaxEngine>(board_, ENGINE_MODE::EASY);
 
     Position getPositionOnBoardFromMouse(int x, int y);
@@ -29,6 +30,7 @@ private:
     void highlightPossibleMoves(Position pos);
     bool isPositionInsidePossibleMoves(Position pos);
     bool isOneWayTo(Position to);
+    void renderResult();
     void processMove();
     void drawPiece(Position pos, bool isMoving = false);
 

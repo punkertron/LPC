@@ -14,5 +14,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE sfml-graphics sfml-window sfml-sys
 
 file(COPY
         ${CMAKE_CURRENT_SOURCE_DIR}/resources/queen.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/you_lost.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/you_win.png
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
