@@ -18,5 +18,5 @@ Move RandomEngine::getBestMove()
         }
         ++i;
     }
-    throw std::runtime_error("Engine cannot get the valid move");
+    throw std::runtime_error("Engine cannot produce the valid move");
 }
