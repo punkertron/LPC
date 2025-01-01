@@ -3,6 +3,8 @@ set(GUI_FILES
     Game.cpp
     StateManager.cpp
     ResourceManager.cpp
+    Button.cpp
+    MenuState.cpp
     PlayState.cpp
 )
 

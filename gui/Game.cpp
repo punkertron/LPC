@@ -1,5 +1,6 @@
 #include "Game.hpp"
 
+#include "MenuState.hpp"
 #include "PlayState.hpp"
 
 Game::Game() : window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_WIDTH), "Checkers Client!", sf::Style::Titlebar | sf::Style::Close}
@@ -17,9 +18,11 @@ Game::Game() : window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_WIDTH), "Checkers Clie
 
     window_.setFramerateLimit(50);
 
-    // TODO: add menu
-    stateManager_.registerState(STATE_TYPE::PlayState, std::make_unique<PlayState>(window_, resourceManager_));
-    stateManager_.setActiveState(STATE_TYPE::PlayState);
+    stateManager_.registerState(STATE_TYPE::MenuState,
+                                std::make_unique<MenuState>(window_, stateManager_, resourceManager_, gameContext_));
+    stateManager_.registerState(STATE_TYPE::PlayState,
+                                std::make_unique<PlayState>(window_, stateManager_, resourceManager_, gameContext_));
+    stateManager_.setActiveState(STATE_TYPE::MenuState);
 }
 
 void Game::run()

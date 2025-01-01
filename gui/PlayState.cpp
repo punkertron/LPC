@@ -10,11 +10,12 @@ const sf::Color DARK_COLOR = sf::Color(181, 136, 99);
 const sf::Color LIGHT_PIECE = sf::Color(240, 240, 210);
 const sf::Color DARK_PIECE = sf::Color(75, 75, 75);
 const sf::Color highlightColor(0, 255, 0, 150);  // Semi-transparent green
-const sf::Color GREY_SEMITRANSPARENT(128, 128, 128, 150);
+const sf::Color GREY_SEMITRANSPARENT(128, 128, 128, 190);
 
-PlayState::PlayState(sf::RenderWindow& window, ResourceManager& resourceManager) : State{window, resourceManager}
+PlayState::PlayState(sf::RenderWindow& window, StateManager& stateManager, ResourceManager& resourceManager,
+                     GameContext& gameContext) :
+    State{window, stateManager, resourceManager, gameContext}
 {
-    copyBoard_ = board_.getCopyBoard();
 }
 
 Position PlayState::getPositionOnBoardFromMouse(int x, int y)
@@ -57,34 +58,42 @@ bool PlayState::isOneWayTo(Position to)
 
 void PlayState::handleEvent(const sf::Event& event)
 {
-    if (!isGameOver_ && board_.getCurrentColour() == playerColor_) {
-        if (event.type == sf::Event::MouseButtonPressed) {
-            if (event.mouseButton.button == sf::Mouse::Left) {
-                int x = event.mouseButton.x;
-                int y = event.mouseButton.y;
+    if (!isGameOver_) {
+        if ((gameContext_.mode == MODE::TWO_PLAYERS || board_.getCurrentColour() == gameContext_.playerColour) &&
+            (!isMoveInProcess_ || (isMoveInProcess_ && !isUniqueWayToNewPosition_))) {
+            if (event.type == sf::Event::MouseButtonPressed) {
+                if (event.mouseButton.button == sf::Mouse::Left) {
+                    int x = event.mouseButton.x;
+                    int y = event.mouseButton.y;
 
-                if (!isSquareSelected_) {
-                    lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
-                    possibleMoves_ = board_.getValidMoves(lastSelectedPosition_);
-                    if (possibleMoves_.empty()) {
-                        return;
-                    }
-                    isSquareSelected_ = true;
-                } else {
-                    auto pos = getPositionOnBoardFromMouse(x, y);
-                    if (pos == lastSelectedPosition_) {
-                        isSquareSelected_ = false;
-                        possibleMoves_.clear();
-                    } else if (isPositionInsidePossibleMoves(pos)) {
-                        isMoveInProcess_ = true;
-                        makeMoveTo_ = pos;
-                        isUniqueWayToNewPosition_ = isOneWayTo(pos);
-                    } else {
+                    if (!isSquareSelected_) {
                         lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
                         possibleMoves_ = board_.getValidMoves(lastSelectedPosition_);
+                        if (possibleMoves_.empty()) {
+                            return;
+                        }
+                        isSquareSelected_ = true;
+                    } else {
+                        auto pos = getPositionOnBoardFromMouse(x, y);
+                        if (pos == lastSelectedPosition_) {
+                            isSquareSelected_ = false;
+                            possibleMoves_.clear();
+                        } else if (isPositionInsidePossibleMoves(pos)) {
+                            isMoveInProcess_ = true;
+                            makeMoveTo_ = pos;
+                            isUniqueWayToNewPosition_ = isOneWayTo(pos);
+                        } else {
+                            lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
+                            possibleMoves_ = board_.getValidMoves(lastSelectedPosition_);
+                        }
                     }
                 }
             }
+        }
+    }
+    if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::Escape) {
+            stateManager_.setActiveState(STATE_TYPE::MenuState);
         }
     }
 }
@@ -92,7 +101,15 @@ void PlayState::handleEvent(const sf::Event& event)
 void PlayState::update()
 {
     if (!isGameOver_) {
-        if (board_.getCurrentColour() != playerColor_ && !isMoveInProcess_) {
+        if (auto result = board_.getResult(); result.isOver) {
+            isGameOver_ = true;
+            winnerColor_ = result.winner;
+            clock.restart();
+        }
+    }
+    if (!isGameOver_) {
+        if (gameContext_.mode == MODE::COMPUTER && board_.getCurrentColour() != gameContext_.playerColour &&
+            !isMoveInProcess_) {
             oneWayMove_ = engine_->getBestMove();
             isMoveInProcess_ = true;
             isUniqueWayToNewPosition_ = true;
@@ -102,10 +119,6 @@ void PlayState::update()
                 ptr = ptr->nextMove.get();
             }
             makeMoveTo_ = ptr->to;
-        }
-        if (auto result = board_.getResult(); result.isOver) {
-            isGameOver_ = true;
-            winnerColor_ = result.winner;
         }
     }
 }
@@ -131,12 +144,24 @@ void PlayState::renderResult()
     greyOverlay.setFillColor(GREY_SEMITRANSPARENT);
     window_.draw(greyOverlay);
 
-    sf::Sprite sprite(winnerColor_ == playerColor_ ? resourceManager_.getYouWinTexture()
-                                                   : resourceManager_.getYouLostTexture());
+    sf::Sprite sprite;
+    if (gameContext_.mode == MODE::COMPUTER) {
+        sprite.setTexture((winnerColor_ == gameContext_.playerColour ? resourceManager_.getYouWinTexture()
+                                                                     : resourceManager_.getYouLostTexture()));
+    } else {
+        sprite.setTexture(resourceManager_.getColourWinsTexture(winnerColor_));
+    }
     sf::Vector2f currentPosSprite = sf::Vector2f{125, 150};
 
     sprite.setPosition(currentPosSprite);
     window_.draw(sprite);
+
+    if (clock.getElapsedTime().asSeconds() > 2) {
+        sf::Text message{"Press Esc to return to the menu", resourceManager_.getFont(), 16};
+        message.setFillColor(sf::Color::White);
+        message.setPosition((600 - message.getGlobalBounds().width) / 2, 320);
+        window_.draw(message);
+    }
 }
 
 void PlayState::render()
@@ -188,6 +213,8 @@ void PlayState::processMove()
         copyBoard_ = board_.getCopyBoard();
         isSquareSelected_ = false;
         possibleMoves_.clear();
+        render();  // FIXME: If we remove it, the beat process can freeze.
+                   // We should correct the engine (maybe return optional) because engine can freeze the gui
     }
 }
 
@@ -213,6 +240,8 @@ void PlayState::drawPiece(Position pos, bool isMoving)
     sf::CircleShape piece{PIECE_RADIUS, 50};
     sf::Vector2f currentPos(pos.col * TILE + 10, pos.row * TILE + 10);
     piece.setFillColor(cell->getColour() == COLOUR::WHITE ? LIGHT_PIECE : DARK_PIECE);
+    piece.setOutlineThickness(2);
+    piece.setOutlineColor(sf::Color{150, 150, 150});
 
     if (isMoving) {
         sf::Vector2f startPos(lastSelectedPosition_.col * TILE + 10, lastSelectedPosition_.row * TILE + 10);
@@ -231,5 +260,28 @@ void PlayState::drawPiece(Position pos, bool isMoving)
 
         sprite.setPosition(currentPosSprite);
         window_.draw(sprite);
+    }
+}
+
+void PlayState::reset()
+{
+    board_.reset();
+    copyBoard_ = board_.getCopyBoard();
+    lastSelectedPosition_.reset();
+    makeMoveTo_.reset();
+    isSquareSelected_ = false;
+    isMoveInProcess_ = false;
+    isUniqueWayToNewPosition_ = false;
+    isGameOver_ = false;
+    movePosition_ = 0.f;
+    oneWayMove_.reset();
+    possibleMoves_.clear();
+    currentMoveColor_ = COLOUR::WHITE;
+    if (gameContext_.mode == MODE::COMPUTER) {
+        if (gameContext_.engineMode == ENGINE_MODE::NOVICE) {
+            engine_ = std::make_unique<RandomEngine>(board_);
+        } else {
+            engine_ = std::make_unique<MinimaxEngine>(board_, gameContext_.engineMode);
+        }
     }
 }

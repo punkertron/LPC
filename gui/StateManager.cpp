@@ -14,9 +14,10 @@ void StateManager::setActiveState(STATE_TYPE st)
 {
     auto it = states_.find(st);
     if (it == states_.end()) {
-        throw std::logic_error("Unknown type of State");
+        throw std::logic_error("Unknown type of State. You forget to call `registerState`?");
     }
     currentState_ = it->second.get();
+    currentState_->reset();
 }
 
 void StateManager::handleEvent(const sf::Event& event)

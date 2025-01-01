@@ -7,6 +7,7 @@
 #include "State.hpp"
 
 enum class STATE_TYPE {
+    MenuState,
     PlayState
 };
 

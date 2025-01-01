@@ -13,17 +13,18 @@ private:
     std::vector<std::vector<std::shared_ptr<Piece>>> copyBoard_;  // this is not actual board inside Board class
     Position lastSelectedPosition_;
     Position makeMoveTo_;
-    bool isSquareSelected_{false};
-    bool isMoveInProcess_{false};
-    bool isUniqueWayToNewPosition_{false};
-    bool isGameOver_{false};
-    float movePosition_{0.f};
+    bool isSquareSelected_;
+    bool isMoveInProcess_;
+    bool isUniqueWayToNewPosition_;
+    bool isGameOver_;
+    float movePosition_;
     Move oneWayMove_;
     std::vector<Move> possibleMoves_;
 
-    COLOUR playerColor_{COLOUR::WHITE};
+    COLOUR currentMoveColor_;
     COLOUR winnerColor_;
-    std::unique_ptr<Engine> engine_ = std::make_unique<MinimaxEngine>(board_, ENGINE_MODE::EASY);
+    std::unique_ptr<Engine> engine_;
+    sf::Clock clock;
 
     Position getPositionOnBoardFromMouse(int x, int y);
     void drawBoard();
@@ -35,8 +36,10 @@ private:
     void drawPiece(Position pos, bool isMoving = false);
 
 public:
-    PlayState(sf::RenderWindow& window, ResourceManager& resourceManager);
+    PlayState(sf::RenderWindow& window, StateManager& stateManager, ResourceManager& resourceManager,
+              GameContext& gameContext);
     void handleEvent(const sf::Event& event) override;
     void update() override;
     void render() override;
+    void reset() override;
 };
