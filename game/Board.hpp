@@ -29,6 +29,8 @@ public:
     Board();
     Board(const Board& other);
 
+    void reset();
+
     std::vector<Move> getValidMoves(const Position& p) const;
     const std::unordered_map<Position, std::vector<Move>>& getValidMoves() const;
     void makeMove(const Move& m);

@@ -15,6 +15,12 @@ struct Position {
     {
         return row >= 0 && col >= 0;
     }
+
+    void reset()
+    {
+        row = -1;
+        col = -1;
+    }
 };
 
 namespace std
@@ -33,4 +39,12 @@ struct Move {
     Position to;
     Position beatenPiecePos{-1, -1};
     std::shared_ptr<Move> nextMove;  // next move in the chains of moves
+
+    void reset()
+    {
+        from.reset();
+        to.reset();
+        beatenPiecePos.reset();
+        nextMove = nullptr;
+    }
 };

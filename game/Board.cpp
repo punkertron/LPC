@@ -5,6 +5,22 @@
 
 Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
 {
+    reset();
+}
+
+Board::Board(const Board& other) : board_{other.getCopyBoard()}, currentColour_{other.getCurrentColour()}
+{
+}
+
+void Board::reset()
+{
+    // reset everyting
+    for (auto& row : board_) {
+        for (auto& col : row) {
+            col = nullptr;
+        }
+    }
+
     for (int i = 0; i < 3; ++i) {
         for (int j = (i % 2 ? 0 : 1); j < board_[0].size(); j += 2) {
             board_[i][j] = std::make_shared<Piece>(PIECE_TYPE::REGULAR, COLOUR::BLACK);
@@ -18,10 +34,6 @@ Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
     }
 
     generateValidMoves();
-}
-
-Board::Board(const Board& other) : board_{other.getCopyBoard()}, currentColour_{other.getCurrentColour()}
-{
 }
 
 std::vector<Move> Board::getValidMoves(const Position& p) const
