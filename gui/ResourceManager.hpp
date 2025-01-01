@@ -11,12 +11,14 @@ private:
     sf::Texture youWin_;
     sf::Texture blackWins_;
     sf::Texture whiteWins_;
+    sf::Font font_;
 
 public:
     ResourceManager();
 
-    sf::Texture& getQueenTexture();
-    sf::Texture& getYouLostTexture();
-    sf::Texture& getYouWinTexture();
-    sf::Texture& getColourWinsTexture(COLOUR c);
+    const sf::Texture& getQueenTexture() const;
+    const sf::Texture& getYouLostTexture() const;
+    const sf::Texture& getYouWinTexture() const;
+    const sf::Texture& getColourWinsTexture(COLOUR c) const;
+    const sf::Font& getFont() const;
 };

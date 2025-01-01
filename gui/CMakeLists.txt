@@ -16,5 +16,8 @@ file(COPY
         ${CMAKE_CURRENT_SOURCE_DIR}/resources/queen.png
         ${CMAKE_CURRENT_SOURCE_DIR}/resources/you_lost.png
         ${CMAKE_CURRENT_SOURCE_DIR}/resources/you_win.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/white_wins.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/black_wins.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/Sixtyfour-Regular.ttf
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
 )
