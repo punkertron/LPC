@@ -16,6 +16,7 @@
 #include "MinimaxEngine.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 constexpr std::array<int, 4> maxDepthsArr = []() consteval {
@@ -114,6 +115,12 @@ Move MinimaxEngine::getBestMove()
 
             // Evaluate the move using the recursive function
             float currentScore = EvaluatePositionRecursive(1, newBoard, !isMaximizingPlayer);
+
+            // Simulate random decision making if the moves are approximately equal in strength
+            // This is to minimize the probability of completely identical games by making the same moves
+            if (std::abs(currentScore - bestScore) < 0.5f) {
+                currentScore += dist(mt);
+            }
 
             // Update the bestMove if a better score is found
             if (isMaximizingPlayer) {
