@@ -15,6 +15,7 @@ Board::Board(const Board& other) : board_{other.getCopyBoard()}, currentColour_{
 void Board::reset()
 {
     // reset everyting
+    currentColour_ = COLOUR::WHITE;
     for (auto& row : board_) {
         for (auto& col : row) {
             col = nullptr;
