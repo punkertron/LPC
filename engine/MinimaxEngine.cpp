@@ -55,7 +55,14 @@ static inline float getDefaultScore(bool isMaximizingPlayer)
 // Recursive Minimax function
 float MinimaxEngine::EvaluatePositionRecursive(int depth, Board& curBoard, bool isMaximizingPlayer)
 {
-    if (depth >= maxDepth_ /*|| curBoard.isGameOver()*/) {
+    if (auto result = curBoard.getResult(); result.isOver) {
+        if (result.winner == COLOUR::WHITE) {
+            return 1000;
+        } else {
+            return -1000;
+        }
+    }
+    if (depth >= maxDepth_) {
         return evaluatePosition(curBoard.getBoard());
     }
 
