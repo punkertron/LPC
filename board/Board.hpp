@@ -11,7 +11,7 @@ class Board {
 private:
     std::vector<std::vector<std::shared_ptr<Piece>>> board_;
     std::unordered_map<Position, std::vector<Move>> validMoves_;
-    COLOUR currentColour_{COLOUR::WHITE};
+    COLOUR currentColour_;
 
     bool isWithinBoard(const Position& p) const;
     void generateValidMoves();

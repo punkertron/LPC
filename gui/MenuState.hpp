@@ -1,9 +1,13 @@
 #pragma once
 
-#include <string_view>
+#include <SFML/Graphics.hpp>
 
 #include "Button.hpp"
 #include "State.hpp"
+
+class ResourceManager;
+class StateManager;
+struct GameContext;
 
 class MenuState final : public State {
 private:

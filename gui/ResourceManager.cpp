@@ -1,5 +1,6 @@
 #include "ResourceManager.hpp"
 
+#include <cstdio>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -34,7 +35,7 @@ static std::filesystem::path getExecutablePath()
     if (len != -1) {
         buffer[len] = '\0';
     } else {
-        perror("readlink");
+        std::perror("readlink");
         return "";
     }
 #endif

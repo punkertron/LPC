@@ -1,7 +1,10 @@
 #include "Game.hpp"
 
+#include <memory>
+
 #include "MenuState.hpp"
 #include "PlayState.hpp"
+#include "State.hpp"
 
 Game::Game() : window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_WIDTH), "Checkers Client!", sf::Style::Titlebar | sf::Style::Close}
 {

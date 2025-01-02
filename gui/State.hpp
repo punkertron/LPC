@@ -2,9 +2,8 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "ResourceManager.hpp"
-
 class StateManager;
+class ResourceManager;
 struct GameContext;
 
 class State {

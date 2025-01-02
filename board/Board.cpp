@@ -1,7 +1,9 @@
 #include "Board.hpp"
 
 #include <algorithm>
+#include <memory>
 #include <stdexcept>
+#include <utility>
 
 Board::Board() : board_(8, std::vector<std::shared_ptr<Piece>>(8, nullptr))
 {

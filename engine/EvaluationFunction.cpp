@@ -22,10 +22,8 @@
 
 #include <array>
 #include <memory>
-#include <unordered_map>
 #include <vector>
 
-#include "Board.hpp"
 #include "Piece.hpp"
 
 constexpr std::array<float, 2> pieceValues = []() consteval {

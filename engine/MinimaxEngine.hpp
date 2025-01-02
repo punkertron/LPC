@@ -1,9 +1,10 @@
 #pragma once
 
-#include <array>
 #include <random>
 
 #include "Engine.hpp"
+#include "Move.hpp"
+class Board;
 
 class MinimaxEngine final : public Engine {
 private:

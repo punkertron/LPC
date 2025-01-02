@@ -3,6 +3,9 @@
 #include <random>
 
 #include "Engine.hpp"
+#include "Move.hpp"
+
+class Board;
 
 class RandomEngine final : public Engine {
 private:

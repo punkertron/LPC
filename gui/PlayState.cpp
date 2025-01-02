@@ -1,6 +1,12 @@
 #include "PlayState.hpp"
 
+#include <algorithm>
+
 #include "Game.hpp"
+#include "MinimaxEngine.hpp"
+#include "RandomEngine.hpp"
+#include "ResourceManager.hpp"
+#include "StateManager.hpp"
 
 constexpr int TILE = Game::WINDOW_WIDTH / Game::BOARD_SIZE;
 constexpr float PIECE_RADIUS = (TILE - 20) / 2.0f;

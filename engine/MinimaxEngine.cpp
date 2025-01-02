@@ -16,8 +16,17 @@
 #include "MinimaxEngine.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
-#include <numeric>
+#include <limits>
+#include <memory>
+#include <stdexcept>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "Board.hpp"
+#include "Piece.hpp"
 
 constexpr std::array<int, 4> maxDepthsArr = []() consteval {
     std::array<int, 4> arr = {};

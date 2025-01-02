@@ -1,9 +1,9 @@
 #include "MenuState.hpp"
 
-#include <iostream>
-
 #include "Engine.hpp"
 #include "Game.hpp"
+#include "Piece.hpp"
+#include "ResourceManager.hpp"
 #include "StateManager.hpp"
 
 MenuState::MenuState(sf::RenderWindow& window, StateManager& stateManager, ResourceManager& resourceManager,

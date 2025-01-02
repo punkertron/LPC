@@ -1,6 +1,11 @@
 #include "RandomEngine.hpp"
 
 #include <stdexcept>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "Board.hpp"
 
 RandomEngine::RandomEngine(Board& board) : Engine(board)
 {

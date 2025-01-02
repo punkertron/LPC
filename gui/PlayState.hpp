@@ -1,11 +1,18 @@
 #pragma once
 
+#include <SFML/Graphics.hpp>
+#include <memory>
+#include <vector>
+
 #include "Board.hpp"
 #include "Engine.hpp"
-#include "MinimaxEngine.hpp"
-#include "RandomEngine.hpp"
-#include "ResourceManager.hpp"
+#include "Move.hpp"
+#include "Piece.hpp"
 #include "State.hpp"
+
+class ResourceManager;
+class StateManager;
+struct GameContext;
 
 class PlayState final : public State {
 private:
