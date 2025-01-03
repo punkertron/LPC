@@ -8,26 +8,29 @@
 #include "ResourceManager.hpp"
 #include "StateManager.hpp"
 
-constexpr int TILE = Game::WINDOW_WIDTH / Game::BOARD_SIZE;
-constexpr float PIECE_RADIUS = (TILE - 20) / 2.0f;
-constexpr float HIGHLIGHT_RADIUS = PIECE_RADIUS / 2;
-const sf::Color LIGHT_COLOR = sf::Color(240, 217, 181);
-const sf::Color DARK_COLOR = sf::Color(181, 136, 99);
-const sf::Color LIGHT_PIECE = sf::Color(240, 240, 210);
-const sf::Color DARK_PIECE = sf::Color(75, 75, 75);
-const sf::Color highlightColor(0, 255, 0, 150);  // Semi-transparent green
-const sf::Color GREY_SEMITRANSPARENT(128, 128, 128, 190);
-
 PlayState::PlayState(sf::RenderWindow& window, StateManager& stateManager, ResourceManager& resourceManager,
                      GameContext& gameContext) :
     State{window, stateManager, resourceManager, gameContext}
 {
+    highlightCircle_.setFillColor(sf::Color{0, 255, 0, 150});  // Semi-transparent green
+
+    whitePieceCircle_.setFillColor(sf::Color{240, 240, 210});
+    whitePieceCircle_.setOutlineThickness(3);
+    whitePieceCircle_.setOutlineColor(sf::Color{150, 150, 150});  // grey
+
+    blackPieceCircle_.setFillColor(sf::Color{75, 75, 75});
+    blackPieceCircle_.setOutlineThickness(3);
+    blackPieceCircle_.setOutlineColor(sf::Color{150, 150, 150});  // grey
+
+    whiteSquare_.setFillColor(sf::Color(240, 217, 181));
+
+    blackSquare_.setFillColor(sf::Color{181, 136, 99});
 }
 
 Position PlayState::getPositionOnBoardFromMouse(int x, int y)
 {
-    int row = y / TILE;
-    int col = x / TILE;
+    int row = y / tile_;
+    int col = x / tile_;
     return {row, col};
 }
 
@@ -133,12 +136,8 @@ void PlayState::drawBoard()
 {
     for (int row = 0; row < Game::BOARD_SIZE; ++row) {
         for (int col = 0; col < Game::BOARD_SIZE; ++col) {
-            sf::RectangleShape square{
-                sf::Vector2f{TILE, TILE}
-            };
-
-            square.setPosition(col * TILE, row * TILE);
-            square.setFillColor((row + col) % 2 == 0 ? LIGHT_COLOR : DARK_COLOR);
+            sf::RectangleShape& square = ((row + col) % 2 == 0 ? whiteSquare_ : blackSquare_);
+            square.setPosition(col * tile_, row * tile_);
             window_.draw(square);
         }
     }
@@ -147,7 +146,7 @@ void PlayState::drawBoard()
 void PlayState::renderResult()
 {
     sf::RectangleShape greyOverlay(sf::Vector2f{Game::WINDOW_WIDTH, Game::WINDOW_WIDTH});
-    greyOverlay.setFillColor(GREY_SEMITRANSPARENT);
+    greyOverlay.setFillColor(sf::Color{128, 128, 128, 190});  // Semi-transparent green
     window_.draw(greyOverlay);
 
     sf::Sprite sprite;
@@ -157,7 +156,7 @@ void PlayState::renderResult()
     } else {
         sprite.setTexture(resourceManager_.getColourWinsTexture(winnerColor_));
     }
-    sf::Vector2f currentPosSprite = sf::Vector2f{125, 150};
+    sf::Vector2f currentPosSprite = sf::Vector2f{(Game::WINDOW_WIDTH - sprite.getGlobalBounds().width) / 2, 150};
 
     sprite.setPosition(currentPosSprite);
     window_.draw(sprite);
@@ -165,7 +164,8 @@ void PlayState::renderResult()
     if (clock.getElapsedTime().asSeconds() > 2) {
         sf::Text message{"Press Esc to return to the menu", resourceManager_.getFont(), 16};
         message.setFillColor(sf::Color::White);
-        message.setPosition((600 - message.getGlobalBounds().width) / 2, 320);
+        message.setPosition((600 - message.getGlobalBounds().width) / 2,
+                            sprite.getGlobalBounds().height + sprite.getPosition().y + 20);
         window_.draw(message);
     }
 }
@@ -230,10 +230,9 @@ void PlayState::highlightPossibleMoves(Position pos)
         if (m.from.row == pos.row && m.from.col == pos.col) {
             const Move* move = &m;
             do {
-                sf::CircleShape highlight(HIGHLIGHT_RADIUS);
-                highlight.setPosition(24 + move->to.col * TILE, 24 + move->to.row * TILE);
-                highlight.setFillColor(highlightColor);
-                window_.draw(highlight);
+                highlightCircle_.setPosition(move->to.col * tile_ + offsetForHighlight_,
+                                             move->to.row * tile_ + offsetForHighlight_);
+                window_.draw(highlightCircle_);
                 move = move->nextMove.get();
             } while (move);
         }
@@ -243,15 +242,13 @@ void PlayState::highlightPossibleMoves(Position pos)
 void PlayState::drawPiece(Position pos, bool isMoving)
 {
     auto cell = copyBoard_[pos.row][pos.col];
-    sf::CircleShape piece{PIECE_RADIUS, 50};
-    sf::Vector2f currentPos(pos.col * TILE + 10, pos.row * TILE + 10);
-    piece.setFillColor(cell->getColour() == COLOUR::WHITE ? LIGHT_PIECE : DARK_PIECE);
-    piece.setOutlineThickness(2);
-    piece.setOutlineColor(sf::Color{150, 150, 150});
+    sf::CircleShape& piece = (cell->getColour() == COLOUR::WHITE ? whitePieceCircle_ : blackPieceCircle_);
+    sf::Vector2f currentPos(pos.col * tile_ + offsetForPiece_, pos.row * tile_ + offsetForPiece_);
 
     if (isMoving) {
-        sf::Vector2f startPos(lastSelectedPosition_.col * TILE + 10, lastSelectedPosition_.row * TILE + 10);
-        sf::Vector2f endPos(makeMoveTo_.col * TILE + 10, makeMoveTo_.row * TILE + 10);
+        sf::Vector2f startPos(lastSelectedPosition_.col * tile_ + offsetForPiece_,
+                              lastSelectedPosition_.row * tile_ + offsetForPiece_);
+        sf::Vector2f endPos(makeMoveTo_.col * tile_ + offsetForPiece_, makeMoveTo_.row * tile_ + offsetForPiece_);
 
         movePosition_ += 0.05f;
         float t = std::min(movePosition_, 1.0f);
@@ -290,4 +287,17 @@ void PlayState::reset()
             engine_ = std::make_unique<MinimaxEngine>(board_, gameContext_.engineMode);
         }
     }
+
+    // calculate default tiles, radiuses etc
+    tile_ = Game::WINDOW_WIDTH / Game::BOARD_SIZE;  // FIXME: take values from context?
+    pieceRadius_ = (tile_ - 20) / 2.0f;
+    highlightRadius_ = pieceRadius_ / 2;
+    offsetForPiece_ = (tile_ - 2 * pieceRadius_) / 2.0f;
+    offsetForHighlight_ = (tile_ - 2 * highlightRadius_) / 2.0f;
+
+    highlightCircle_.setRadius(highlightRadius_);
+    whitePieceCircle_.setRadius(pieceRadius_);
+    blackPieceCircle_.setRadius(pieceRadius_);
+    whiteSquare_.setSize(sf::Vector2f(tile_, tile_));
+    blackSquare_.setSize(sf::Vector2f(tile_, tile_));
 }

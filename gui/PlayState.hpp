@@ -33,6 +33,22 @@ private:
     std::unique_ptr<Engine> engine_;
     sf::Clock clock;
 
+    // default shapes
+    sf::CircleShape highlightCircle_;
+    sf::CircleShape whitePieceCircle_;
+    sf::CircleShape blackPieceCircle_;
+    sf::RectangleShape whiteSquare_;
+    sf::RectangleShape blackSquare_;
+
+    // default tiles, radiuses etc
+    // make non-const, because in the feature we can add international board
+    //   with the size 10x10, and we should recalculate this parameters
+    int tile_;
+    float pieceRadius_;
+    float highlightRadius_;
+    float offsetForPiece_;
+    float offsetForHighlight_;
+
     Position getPositionOnBoardFromMouse(int x, int y);
     void drawBoard();
     void highlightPossibleMoves(Position pos);
