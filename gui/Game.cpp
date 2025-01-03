@@ -7,7 +7,7 @@
 #include "State.hpp"
 
 Game::Game() :
-    window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_WIDTH), "LPD - Let's Play Checkers!!", sf::Style::Titlebar | sf::Style::Close}
+    window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_WIDTH), "LPC - Let's Play Checkers!!", sf::Style::Titlebar | sf::Style::Close}
 {
     // Calculate the position to the center of Desktop
     sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();

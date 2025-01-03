@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25.1)
-project(LPD LANGUAGES CXX)  # Let's Play Checkers!!
+project(LPC LANGUAGES CXX)  # Let's Play Checkers!!
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

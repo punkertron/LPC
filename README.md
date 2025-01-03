@@ -1,4 +1,4 @@
-# LPD -  Let's Play Checkers!!
+# LPC -  Let's Play Checkers!!
 
 A classic Checkers (Draughts) game written in modern C++20, featuring both local two-player mode and various AI opponents, rendered with SFML.<br/>
 Only Russian checkers is supported now.
@@ -108,7 +108,7 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 ```
 3. **Run**
 ```bash
-./gui/LPD
+./gui/LPC
 ```
 
 ---
