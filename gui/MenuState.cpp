@@ -117,7 +117,7 @@ void MenuState::update()
 
 void MenuState::render()
 {
-    sf::Text text("Let's play\n\n Checkers!!", resourceManager_.getFont(), 36);
+    sf::Text text("Let's Play\n\n Checkers!!", resourceManager_.getFont(), 36);
     text.setFillColor(sf::Color::White);
     text.setPosition((600 - text.getGlobalBounds().width) / 2, 50);
     window_.draw(text);
