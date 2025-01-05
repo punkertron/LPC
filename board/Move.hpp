@@ -8,10 +8,7 @@ struct Position {
     int row;
     int col;
 
-    bool operator==(const Position& other) const
-    {
-        return row == other.row && col == other.col;
-    }
+    friend auto operator<=>(const Position& left, const Position& right) = default;
 
     bool isValid() const
     {
