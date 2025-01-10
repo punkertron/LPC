@@ -1,5 +1,6 @@
 /**
- * Implementation of the MinimaxEngine class using the Minimax algorithm for decision making.
+ * Implementation of the MinimaxEngine class using the Minimax algorithm with Alpha-Beta pruning.
+ * More about Alpha-Beta pruning: https://www.youtube.com/watch?v=l-hh51ncgDI
  *
  * The MinimaxEngine uses the Minimax algorithm to evaluate possible moves and select the optimal one.
  * It recursively explores potential moves up to a specified depth, alternating between maximizing
@@ -63,7 +64,7 @@ static inline float getDefaultScore(bool isMaximizingPlayer)
 }
 
 // Recursive Minimax function
-float MinimaxEngine::EvaluatePositionRecursive(int depth, Board& curBoard, bool isMaximizingPlayer)
+float MinimaxEngine::EvaluatePositionRecursive(int depth, Board& curBoard, bool isMaximizingPlayer, float alpha, float beta)
 {
     if (auto result = curBoard.getResult(); result.isOver) {
         if (result.winner == COLOUR::WHITE) {
@@ -91,14 +92,22 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Board& curBoard, bool 
             newBoard.makeMove(move);
 
             // Recursively evaluate the new board state
-            float currentScore = EvaluatePositionRecursive(depth + 1, newBoard, !isMaximizingPlayer);
+            float currentScore = EvaluatePositionRecursive(depth + 1, newBoard, !isMaximizingPlayer, alpha, beta);
 
             // Update bestScore based on maximizing or minimizing
             if (isMaximizingPlayer) {
                 bestScore = std::max(bestScore, currentScore);
+                alpha = std::max(alpha, bestScore);
             } else {
                 bestScore = std::min(bestScore, currentScore);
+                beta = std::min(beta, bestScore);
             }
+            if (beta <= alpha) {
+                break;
+            }
+        }
+        if (beta <= alpha) {
+            break;
         }
     }
 
@@ -107,15 +116,19 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Board& curBoard, bool 
 
 Move MinimaxEngine::getBestMove()
 {
-    // Determine if the current player is maximizing or minimizing
-    bool isMaximizingPlayer = board_.getCurrentColour() == COLOUR::WHITE;
-    float bestScore = getDefaultScore(isMaximizingPlayer);
-    Move bestMove;
-
+    // Doesn't do anything if there is only one possible move
     auto moves = board_.getValidMoves();
     if (moves.size() == 1 && (*moves.begin()).second.size() == 1) {
         return moves.begin()->second[0];
     }
+
+    // Determine if the current player is maximizing or minimizing
+    bool isMaximizingPlayer = board_.getCurrentColour() == COLOUR::WHITE;
+    float bestScore = getDefaultScore(isMaximizingPlayer);
+    float alpha = getDefaultScore(true);
+    float beta = getDefaultScore(false);
+    Move bestMove;
+
     for (const auto& moveSeries : moves) {
         for (const auto& move : moveSeries.second) {
             // Clone the current board to simulate the move
@@ -123,7 +136,7 @@ Move MinimaxEngine::getBestMove()
             newBoard.makeMove(move);
 
             // Evaluate the move using the recursive function
-            float currentScore = EvaluatePositionRecursive(1, newBoard, !isMaximizingPlayer);
+            float currentScore = EvaluatePositionRecursive(1, newBoard, !isMaximizingPlayer, alpha, beta);
 
             // Simulate random decision making if the moves are approximately equal in strength
             // This is to minimize the probability of completely identical games by making the same moves
@@ -137,12 +150,20 @@ Move MinimaxEngine::getBestMove()
                     bestScore = currentScore;
                     bestMove = move;
                 }
+                alpha = std::max(alpha, bestScore);
             } else {
                 if (currentScore < bestScore) {
                     bestScore = currentScore;
                     bestMove = move;
                 }
+                beta = std::min(beta, bestScore);
             }
+            if (beta <= alpha) {
+                break;
+            }
+        }
+        if (beta <= alpha) {
+            break;
         }
     }
 

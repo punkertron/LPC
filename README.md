@@ -14,7 +14,7 @@ Only Russian checkers is supported now.
 
 - **AI Engines**  
   - **Random Engine**: Picks a random valid move.  
-  - **Minimax Engine**: Employs the Minimax algorithm with variable difficulty levels (`EASY`, `MEDIUM`, `HARD`, `GRANDMASTER`).  
+  - **Minimax Engine**: Employs the Minimax algorithm (with Alpha-Beta pruning) with variable difficulty levels (`EASY`, `MEDIUM`, `HARD`, `GRANDMASTER`).  
 
 - **GUI**  
   - SFML-based user interface with clickable squares.  
@@ -58,7 +58,7 @@ This project is split into three main parts:
 2. **Engine**  
    - **`Engine`** is an abstract base class providing a `getBestMove()` method.  
    - **`RandomEngine`**: Returns a random valid move.  
-   - **`MinimaxEngine`**: Implements a Minimax search. Different difficulty levels limit the search depth. Added a random component when choosing the optimal move to minimize the probability of getting exactly the same games.
+   - **`MinimaxEngine`**: Implements a Minimax search. Different difficulty levels limit the search depth. Implemented Alpha-Beta pruning. Added a random component when choosing the optimal move to minimize the probability of getting exactly the same games.
    - Uses an evaluation function in `EvaluationFunction.cpp` to score board states.
 
 3. **GUI**  
@@ -93,7 +93,7 @@ This project is split into three main parts:
   - Forces capture moves if any are available (as in checkers rules).  
   - Supports piece promotion and chain captures.
 
-- **Minimax with Depth**  
+- **Minimax with Depth (with Alpha-Beta pruning)**  
   - Evaluates board states up to a maximum depth (`EASY = 2`, `MEDIUM = 4`, etc.)  
   - Scores positions using `evaluatePosition()` for piece advantage and positional bonuses.  
 
@@ -132,9 +132,8 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
     - Track and revert moves for convenience.
 
 3. **Improve AI**
-    - Add alpha-beta pruning to the Minimax search.
     - Implement a transposition table or caching.
-    - Add multhithreading (`Grandmaster` mode is really slow).
+    - Add multhithreading (`Grandmaster` mode can be faster).
 
 4. **Online Multiplayer**
     - Introduce network play for remote two-player matches.
