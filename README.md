@@ -108,7 +108,7 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 ```
 3. **Run**
 ```bash
-./gui/LPC
+./LPC
 ```
 
 ---

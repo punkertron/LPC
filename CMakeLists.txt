@@ -10,3 +10,17 @@ find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 add_subdirectory(board)
 add_subdirectory(engine)
 add_subdirectory(gui)
+
+add_executable(${PROJECT_NAME} main.cpp)
+
+target_link_libraries(${PROJECT_NAME} PRIVATE gui)
+
+file(COPY
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/queen.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/you_lost.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/you_win.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/white_wins.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/black_wins.png
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/Sixtyfour-Regular.ttf
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+)
