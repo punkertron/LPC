@@ -69,9 +69,9 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Checkers& curBoard, bo
 {
     if (auto result = curBoard.getResult(); result.isOver) {
         if (result.winner == COLOUR::WHITE) {
-            return 1000;
+            return 1000.0f;
         } else {
-            return -1000;
+            return -1000.0f;
         }
     }
     if (depth >= maxDepth_) {
@@ -126,8 +126,7 @@ Move MinimaxEngine::getBestMove()
     // Determine if the current player is maximizing or minimizing
     bool isMaximizingPlayer = checkers_.getCurrentColour() == COLOUR::WHITE;
     float bestScore = getDefaultScore(isMaximizingPlayer);
-    float alpha = getDefaultScore(true);
-    float beta = getDefaultScore(false);
+
     Move bestMove;
 
     for (const auto& moveSeries : moves) {
@@ -137,6 +136,8 @@ Move MinimaxEngine::getBestMove()
             newBoard.makeMove(move);
 
             // Evaluate the move using the recursive function
+            float alpha = getDefaultScore(true);
+            float beta = getDefaultScore(false);
             float currentScore = EvaluatePositionRecursive(1, newBoard, !isMaximizingPlayer, alpha, beta);
 
             // Simulate random decision making if the moves are approximately equal in strength
@@ -159,12 +160,6 @@ Move MinimaxEngine::getBestMove()
                 }
                 beta = std::min(beta, bestScore);
             }
-            if (beta <= alpha) {
-                break;
-            }
-        }
-        if (beta <= alpha) {
-            break;
         }
     }
 
