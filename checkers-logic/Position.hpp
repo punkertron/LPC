@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <functional>
-#include <memory>
 
 struct Position {
     int row;
@@ -32,18 +31,3 @@ struct hash<Position> {
     }
 };
 }  // namespace std
-
-struct Move {
-    Position from;
-    Position to;
-    Position beatenPiecePos{-1, -1};
-    std::shared_ptr<Move> nextMove;  // next move in the chains of moves
-
-    void reset()
-    {
-        from.reset();
-        to.reset();
-        beatenPiecePos.reset();
-        nextMove = nullptr;
-    }
-};

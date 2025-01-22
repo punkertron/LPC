@@ -1,41 +1,45 @@
 #pragma once
 
-#include <memory>
 #include <unordered_map>
 #include <vector>
 
+#include "Board.hpp"
 #include "Move.hpp"
-#include "Piece.hpp"
+#include "Position.hpp"
 
-class Board {
+enum class COLOUR {
+    WHITE,
+    BLACK
+};
+
+class Checkers {
 private:
-    std::vector<std::vector<std::shared_ptr<Piece>>> board_;
+    Board board_;
     std::unordered_map<Position, std::vector<Move>> validMoves_;
     COLOUR currentColour_;
 
     bool isWithinBoard(const Position& p) const;
     void generateValidMoves();
     void addBeatMoves(const Position& p, std::vector<Move>& res) const;
-    void findCaptures(const Position& initial, std::vector<std::vector<std::shared_ptr<Piece>>>& boardCopy,
-                      std::vector<Move>& moves) const;
-    void processCapture(const Position& initial, const Position& enemy, const Position& landing,
-                        std::vector<std::vector<std::shared_ptr<Piece>>>& boardCopy, std::vector<Move>& moves) const;
+    void findCaptures(const Position& initial, Board& boardCopy, std::vector<Move>& moves) const;
+    void processCapture(const Position& initial, const Position& enemy, const Position& landing, Board& boardCopy,
+                        std::vector<Move>& moves) const;
     void removeQueenWrongMoves(const Position& initial, const Position& enemy, std::vector<Move>& moves) const;
     void addNonBeatMoves(const Position& p, std::vector<Move>& res) const;
     void addOneStepMoves(const Position& p, std::vector<Move>& res) const;
     void addQueenNonBeatMoves(const Position& p, std::vector<Move>& res) const;
 
 public:
-    Board();
-    Board(const Board& other);
+    Checkers();
+    Checkers(const Checkers& other);
 
     void reset();
 
     std::vector<Move> getValidMoves(const Position& p) const;
     const std::unordered_map<Position, std::vector<Move>>& getValidMoves() const;
     void makeMove(const Move& m);
-    const std::vector<std::vector<std::shared_ptr<Piece>>>& getBoard() const;
-    std::vector<std::vector<std::shared_ptr<Piece>>> getCopyBoard() const;
+    const Board& getBoard() const;
+    Board getCopyBoard() const;
     COLOUR getCurrentColour() const;
 
     struct GameResult {

@@ -5,9 +5,10 @@
 #include <vector>
 
 #include "Board.hpp"
+#include "Checkers.hpp"
 #include "Engine.hpp"
 #include "Move.hpp"
-#include "Piece.hpp"
+#include "Position.hpp"
 #include "State.hpp"
 
 class ResourceManager;
@@ -16,8 +17,8 @@ struct GameContext;
 
 class PlayState final : public State {
 private:
-    Board board_{};
-    std::vector<std::vector<std::shared_ptr<Piece>>> copyBoard_;  // this is not actual board inside Board class
+    Checkers checkers_{};
+    Board copyBoard_;  // this is not actual board inside Board class
     Position lastSelectedPosition_;
     Position makeMoveTo_;
     bool isSquareSelected_;

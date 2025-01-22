@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "Piece.hpp"
+#include "Checkers.hpp"
 #include "ResourceManager.hpp"
 #include "StateManager.hpp"
 

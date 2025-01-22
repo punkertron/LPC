@@ -1,9 +1,11 @@
 #include "PlayState.hpp"
 
 #include <algorithm>
+#include <utility>
 
 #include "Game.hpp"
 #include "MinimaxEngine.hpp"
+#include "Piece.hpp"
 #include "RandomEngine.hpp"
 #include "ResourceManager.hpp"
 #include "StateManager.hpp"
@@ -68,7 +70,7 @@ bool PlayState::isOneWayTo(Position to)
 void PlayState::handleEvent(const sf::Event& event)
 {
     if (!isGameOver_) {
-        if ((gameContext_.mode == MODE::TWO_PLAYERS || board_.getCurrentColour() == gameContext_.playerColour) &&
+        if ((gameContext_.mode == MODE::TWO_PLAYERS || checkers_.getCurrentColour() == gameContext_.playerColour) &&
             (!isMoveInProcess_ || (isMoveInProcess_ && !isUniqueWayToNewPosition_))) {
             if (event.type == sf::Event::MouseButtonPressed) {
                 if (event.mouseButton.button == sf::Mouse::Left) {
@@ -77,7 +79,7 @@ void PlayState::handleEvent(const sf::Event& event)
 
                     if (!isSquareSelected_) {
                         lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
-                        possibleMoves_ = board_.getValidMoves(lastSelectedPosition_);
+                        possibleMoves_ = checkers_.getValidMoves(lastSelectedPosition_);
                         if (possibleMoves_.empty()) {
                             return;
                         }
@@ -93,7 +95,7 @@ void PlayState::handleEvent(const sf::Event& event)
                             isUniqueWayToNewPosition_ = isOneWayTo(pos);
                         } else {
                             lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
-                            possibleMoves_ = board_.getValidMoves(lastSelectedPosition_);
+                            possibleMoves_ = checkers_.getValidMoves(lastSelectedPosition_);
                         }
                     }
                 }
@@ -110,14 +112,14 @@ void PlayState::handleEvent(const sf::Event& event)
 void PlayState::update()
 {
     if (!isGameOver_) {
-        if (auto result = board_.getResult(); result.isOver) {
+        if (auto result = checkers_.getResult(); result.isOver) {
             isGameOver_ = true;
             winnerColor_ = result.winner;
             clock.restart();
         }
     }
     if (!isGameOver_) {
-        if (gameContext_.mode == MODE::COMPUTER && board_.getCurrentColour() != gameContext_.playerColour &&
+        if (gameContext_.mode == MODE::COMPUTER && checkers_.getCurrentColour() != gameContext_.playerColour &&
             !isMoveInProcess_) {
             oneWayMove_ = engine_->getBestMove();
             isMoveInProcess_ = true;
@@ -176,8 +178,8 @@ void PlayState::render()
 
     // draw pieces
     for (int row = 0; row < Game::BOARD_SIZE; ++row) {
-        for (int col = 0; col < Game::BOARD_SIZE; ++col) {
-            if (auto cell = copyBoard_[row][col]) {
+        for (int col = (row % 2 ? 0 : 1); col < Game::BOARD_SIZE; col += 2) {
+            if (auto piece = copyBoard_(row, col); piece.isNotEmpty()) {
                 if (!isMoveInProcess_ || !(lastSelectedPosition_ == Position{row, col})) {
                     drawPiece(Position{row, col});
                 }
@@ -207,16 +209,15 @@ void PlayState::processMove()
         if (isUniqueWayToNewPosition_) {
             isMoveInProcess_ = false;
         } else {
-            std::swap(copyBoard_[makeMoveTo_.row][makeMoveTo_.col],
-                      copyBoard_[lastSelectedPosition_.row][lastSelectedPosition_.col]);
+            std::swap(copyBoard_(makeMoveTo_), copyBoard_(lastSelectedPosition_));
             lastSelectedPosition_ = makeMoveTo_;
         }
     }
 
     if (!isMoveInProcess_ && isUniqueWayToNewPosition_) {
         isUniqueWayToNewPosition_ = false;
-        board_.makeMove(oneWayMove_);
-        copyBoard_ = board_.getCopyBoard();
+        checkers_.makeMove(oneWayMove_);
+        copyBoard_ = checkers_.getCopyBoard();
         isSquareSelected_ = false;
         possibleMoves_.clear();
         render();  // FIXME: If we remove it, the beat process can freeze.
@@ -241,8 +242,8 @@ void PlayState::highlightPossibleMoves(Position pos)
 
 void PlayState::drawPiece(Position pos, bool isMoving)
 {
-    auto cell = copyBoard_[pos.row][pos.col];
-    sf::CircleShape& piece = (cell->getColour() == COLOUR::WHITE ? whitePieceCircle_ : blackPieceCircle_);
+    auto piece = copyBoard_(pos);
+    sf::CircleShape& shape = (piece.getColour() == COLOUR::WHITE ? whitePieceCircle_ : blackPieceCircle_);
     sf::Vector2f currentPos(pos.col * tile_ + offsetForPiece_, pos.row * tile_ + offsetForPiece_);
 
     if (isMoving) {
@@ -254,10 +255,10 @@ void PlayState::drawPiece(Position pos, bool isMoving)
         float t = std::min(movePosition_, 1.0f);
         currentPos = (endPos - startPos) * t + startPos;
     }
-    piece.setPosition(currentPos);
+    shape.setPosition(currentPos);
 
-    window_.draw(piece);
-    if (cell->getPieceType() == PIECE_TYPE::QUEEN) {
+    window_.draw(shape);
+    if (piece.isQueen()) {
         sf::Sprite sprite(resourceManager_.getQueenTexture());
         sf::Vector2f currentPosSprite = currentPos + sf::Vector2f{12, 10};
 
@@ -268,8 +269,8 @@ void PlayState::drawPiece(Position pos, bool isMoving)
 
 void PlayState::reset()
 {
-    board_.reset();
-    copyBoard_ = board_.getCopyBoard();
+    checkers_.reset();
+    copyBoard_ = checkers_.getCopyBoard();
     lastSelectedPosition_.reset();
     makeMoveTo_.reset();
     isSquareSelected_ = false;
@@ -282,9 +283,9 @@ void PlayState::reset()
     currentMoveColor_ = COLOUR::WHITE;
     if (gameContext_.mode == MODE::COMPUTER) {
         if (gameContext_.engineMode == ENGINE_MODE::NOVICE) {
-            engine_ = std::make_unique<RandomEngine>(board_);
+            engine_ = std::make_unique<RandomEngine>(checkers_);
         } else {
-            engine_ = std::make_unique<MinimaxEngine>(board_, gameContext_.engineMode);
+            engine_ = std::make_unique<MinimaxEngine>(checkers_, gameContext_.engineMode);
         }
     }
 

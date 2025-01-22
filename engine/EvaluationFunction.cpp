@@ -9,7 +9,7 @@
  *   representing the advantage of one player over the other.
  *
  * ## Components
- * - `evaluatePosition(const std::vector<std::vector<std::shared_ptr<Piece>>>& board)`:
+ * - `evaluatePosition(const const Board& board)`:
  *   Iterates through the game board, sums the values of white and black pieces including positional modifiers,
  *   and returns the difference as the overall position score.
  *
@@ -24,19 +24,9 @@
 #include <memory>
 #include <vector>
 
+#include "Board.hpp"
+#include "Checkers.hpp"
 #include "Piece.hpp"
-
-constexpr std::array<float, 2> pieceValues = []() consteval {
-    std::array<float, 2> arr = {};
-    arr[static_cast<int>(PIECE_TYPE::REGULAR)] = 3.0f;
-    arr[static_cast<int>(PIECE_TYPE::QUEEN)] = 12.0f;
-    return arr;
-}();
-
-static inline int pieceTypeToInt(PIECE_TYPE type)
-{
-    return static_cast<int>(type);
-}
 
 constexpr std::array<float, 8> rowValuesForRegularPiece = {
     {0, 0, 0, 0.2f, 0.4f, 0.5f, 0.7f, 1.f}
@@ -50,30 +40,39 @@ constexpr std::array<float, 4> columnValues = {
     {0, 0.06f, 0.06f, 0}
 };
 
-static inline float getRowValue(PIECE_TYPE type, int i)
+static inline float getRowValue(const Piece p, int i)
 {
-    if (type == PIECE_TYPE::REGULAR) {
+    if (p.isRegular()) {
         return rowValuesForRegularPiece[i];
     } else {
         return rowValuesForQueen[i];
     }
 }
 
-float evaluatePosition(const std::vector<std::vector<std::shared_ptr<Piece>>>& board)
+static inline float getPieceValue(const Piece p)
+{
+    if (p.isRegular()) {
+        return 3.0f;
+    } else {  // QUEEN
+        return 12.0f;
+    }
+}
+
+float evaluatePosition(const Board& board)
 {
     float whiteSum{0};
     float blackSum{0};
 
-    for (int i = 0; i < board.size(); ++i) {
-        for (int j = 0; j < board[0].size(); ++j) {
-            if (auto cell = board[i][j]; cell && cell->getPieceType() != PIECE_TYPE::CAPTURED) {
-                if (cell->getColour() == COLOUR::WHITE) {
-                    whiteSum += pieceValues[pieceTypeToInt(cell->getPieceType())];
-                    whiteSum += getRowValue(cell->getPieceType(), board.size() - 1 - i);
+    for (int i = 0; i < board.getWidth(); ++i) {
+        for (int j = (i % 2 ? 0 : 1); j < board.getWidth(); j += 2) {
+            if (auto piece = board(i, j); piece.isNotEmpty()) {
+                if (piece.getColour() == COLOUR::WHITE) {
+                    whiteSum += getPieceValue(piece);
+                    whiteSum += getRowValue(piece, board.getWidth() - 1 - i);
                     whiteSum += columnValues[j / 2];
                 } else {
-                    blackSum += pieceValues[pieceTypeToInt(cell->getPieceType())];
-                    blackSum += getRowValue(cell->getPieceType(), i);
+                    blackSum += getPieceValue(piece);
+                    blackSum += getRowValue(piece, i);
                     blackSum += columnValues[j / 2];
                 }
             }

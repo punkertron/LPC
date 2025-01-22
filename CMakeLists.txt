@@ -7,7 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(SFML 2.5 COMPONENTS graphics window system REQUIRED)
 
-add_subdirectory(board)
+add_subdirectory(checkers-logic)
 add_subdirectory(engine)
 add_subdirectory(gui)
 

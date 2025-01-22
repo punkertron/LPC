@@ -2,7 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 
-#include "Piece.hpp"
+enum class COLOUR;
 
 class ResourceManager final {
 private:

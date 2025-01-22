@@ -6,6 +6,8 @@
 #include <string>
 #include <string_view>
 
+#include "Checkers.hpp"
+
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__APPLE__)

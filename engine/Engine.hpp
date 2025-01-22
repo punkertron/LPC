@@ -2,7 +2,7 @@
 
 #include "Move.hpp"
 
-class Board;
+class Checkers;
 
 enum class ENGINE_MODE {
     NOVICE = -1,  // yes, this is -1 and EASE = 0
@@ -14,10 +14,10 @@ enum class ENGINE_MODE {
 
 class Engine {
 protected:
-    Board& board_;
+    Checkers& checkers_;
 
 public:
-    Engine(Board& board) : board_{board}
+    Engine(Checkers& checkers) : checkers_{checkers}
     {
     }
 

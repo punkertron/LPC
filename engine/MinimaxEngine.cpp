@@ -20,14 +20,14 @@
 #include <array>
 #include <cmath>
 #include <limits>
-#include <memory>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
-#include "Board.hpp"
-#include "Piece.hpp"
+#include "Checkers.hpp"
+
+struct Board;
 
 constexpr std::array<int, 4> maxDepthsArr = []() consteval {
     std::array<int, 4> arr = {};
@@ -44,10 +44,10 @@ static inline int endgineModeToInt(ENGINE_MODE mode)
     return static_cast<int>(mode);
 }
 
-float evaluatePosition(const std::vector<std::vector<std::shared_ptr<Piece>>>& board);
+float evaluatePosition(const Board& board);
 
-MinimaxEngine::MinimaxEngine(Board& board, ENGINE_MODE mode) :
-    Engine(board),
+MinimaxEngine::MinimaxEngine(Checkers& checkers, ENGINE_MODE mode) :
+    Engine(checkers),
     maxDepth_{mode == ENGINE_MODE::NOVICE
                   ? throw std::logic_error("MinimaxEngine doesn't implement NOVICE mode. Use Random Engine instead")
                   : maxDepthsArr[endgineModeToInt(mode)]}
@@ -64,7 +64,8 @@ static inline float getDefaultScore(bool isMaximizingPlayer)
 }
 
 // Recursive Minimax function
-float MinimaxEngine::EvaluatePositionRecursive(int depth, Board& curBoard, bool isMaximizingPlayer, float alpha, float beta)
+float MinimaxEngine::EvaluatePositionRecursive(int depth, Checkers& curBoard, bool isMaximizingPlayer, float alpha,
+                                               float beta)
 {
     if (auto result = curBoard.getResult(); result.isOver) {
         if (result.winner == COLOUR::WHITE) {
@@ -88,7 +89,7 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Board& curBoard, bool 
     for (const auto& moveSeries : moves) {
         for (const auto& move : moveSeries.second) {
             // Clone the current board to simulate the move
-            Board newBoard = curBoard;
+            Checkers newBoard = curBoard;
             newBoard.makeMove(move);
 
             // Recursively evaluate the new board state
@@ -117,13 +118,13 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Board& curBoard, bool 
 Move MinimaxEngine::getBestMove()
 {
     // Doesn't do anything if there is only one possible move
-    auto moves = board_.getValidMoves();
+    auto moves = checkers_.getValidMoves();
     if (moves.size() == 1 && (*moves.begin()).second.size() == 1) {
         return moves.begin()->second[0];
     }
 
     // Determine if the current player is maximizing or minimizing
-    bool isMaximizingPlayer = board_.getCurrentColour() == COLOUR::WHITE;
+    bool isMaximizingPlayer = checkers_.getCurrentColour() == COLOUR::WHITE;
     float bestScore = getDefaultScore(isMaximizingPlayer);
     float alpha = getDefaultScore(true);
     float beta = getDefaultScore(false);
@@ -132,7 +133,7 @@ Move MinimaxEngine::getBestMove()
     for (const auto& moveSeries : moves) {
         for (const auto& move : moveSeries.second) {
             // Clone the current board to simulate the move
-            Board newBoard = board_;
+            Checkers newBoard = checkers_;
             newBoard.makeMove(move);
 
             // Evaluate the move using the recursive function

@@ -5,15 +5,15 @@
 #include <utility>
 #include <vector>
 
-#include "Board.hpp"
+#include "Checkers.hpp"
 
-RandomEngine::RandomEngine(Board& board) : Engine(board)
+RandomEngine::RandomEngine(Checkers& checkers) : Engine(checkers)
 {
 }
 
 Move RandomEngine::getBestMove()
 {
-    auto validMoves = board_.getValidMoves();
+    auto validMoves = checkers_.getValidMoves();
     int size = validMoves.size();
     int moveIndex = mt() % size;
     int i = 0;

@@ -1,5 +1,6 @@
 #include "MenuState.hpp"
 
+#include "Checkers.hpp"
 #include "Engine.hpp"
 #include "Game.hpp"
 #include "Piece.hpp"

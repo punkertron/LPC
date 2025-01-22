@@ -49,10 +49,10 @@ Only Russian checkers is supported now.
 
 This project is split into three main parts:
 
-1. **Board**  
-   - **`Board`** class: Maintains an 8×8 grid of `std::shared_ptr<Piece>` pointers.  
-   - Handles all move logic, captures, piece promotion, and maintains the turn order.  
-   - Exposes functions for retrieving valid moves, making moves, and resetting the board.  
+1. **Checkers-logic**
+   - **`Checkers`** class: Handles all move logic, captures, piece promotion, and maintains the turn order. Stores **Board**
+   - **`Board`** class: Maintains both 8×8 and 10x10 grid using space-efficient std::array. sizeof(Board) = 51
+   - Exposes functions for retrieving valid moves, making moves, and resetting the board.
    - Tracks game result and winner determination.
 
 2. **Engine**  
