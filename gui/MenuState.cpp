@@ -12,6 +12,9 @@ MenuState::MenuState(sf::RenderWindow& window, StateManager& stateManager, Resou
     State{
         window, stateManager, resourceManager, gameContext
 },
+    //// Select Checkers type
+    selectInternationalTypeButton_{window, 280, resourceManager_.getFont(), "International", sf::Color{156, 62, 62}},
+    selectRussianTypeButton_{window_, 380, resourceManager_.getFont(), "Russian", sf::Color{177, 143, 144}},
     //// Select Mode
     playWithComputerButton_{window, 280, resourceManager_.getFont(), "With Computer", sf::Color{34, 224, 216}},
     playTwoPlayersButton_{window_, 380, resourceManager_.getFont(), "Two Players", sf::Color{253, 0, 201}},
@@ -25,6 +28,18 @@ MenuState::MenuState(sf::RenderWindow& window, StateManager& stateManager, Resou
     selectEngineHardMode_{window, 420, resourceManager_.getFont(), "Hard", sf::Color{252, 149, 55}},
     selectEngineGrandmasterMode_{window, 480, resourceManager_.getFont(), "Grandmaster", sf::Color{255, 0, 118}}
 {
+    //// Select Checkers type
+    selectInternationalTypeButton_.setCallback(
+        [&checkersType = gameContext_.checkersType, &isCheckersTypeSelected = gameContext_.isCheckersTypeSelected]() {
+            checkersType = CHECKERS_TYPE::INTERNATIONAL;
+            isCheckersTypeSelected = true;
+        });
+    selectRussianTypeButton_.setCallback(
+        [&checkersType = gameContext_.checkersType, &isCheckersTypeSelected = gameContext_.isCheckersTypeSelected]() {
+            checkersType = CHECKERS_TYPE::RUSSIAN;
+            isCheckersTypeSelected = true;
+        });
+
     // Select Mode
     playWithComputerButton_.setCallback([&mode = gameContext_.mode, &isModeSelected = gameContext_.isModeSelected]() {
         mode = MODE::COMPUTER;
@@ -77,21 +92,26 @@ MenuState::MenuState(sf::RenderWindow& window, StateManager& stateManager, Resou
 
 void MenuState::handleEvent(const sf::Event& event)
 {
-    if (!gameContext_.isModeSelected) {
-        playWithComputerButton_.handleEvent(event);
-        playTwoPlayersButton_.handleEvent(event);
+    if (!gameContext_.isCheckersTypeSelected) {
+        selectInternationalTypeButton_.handleEvent(event);
+        selectRussianTypeButton_.handleEvent(event);
     } else {
-        if (gameContext_.mode == MODE::COMPUTER) {
-            if (!gameContext_.isColourSelected) {
-                playWhiteButton_.handleEvent(event);
-                playBlackButton_.handleEvent(event);
-            } else {
-                if (!gameContext_.isEngineModeSelected) {
-                    selectEngineNoviceMode_.handleEvent(event);
-                    selectEngineEasyMode_.handleEvent(event);
-                    selectEngineMediumMode_.handleEvent(event);
-                    selectEngineHardMode_.handleEvent(event);
-                    selectEngineGrandmasterMode_.handleEvent(event);
+        if (!gameContext_.isModeSelected) {
+            playWithComputerButton_.handleEvent(event);
+            playTwoPlayersButton_.handleEvent(event);
+        } else {
+            if (gameContext_.mode == MODE::COMPUTER) {
+                if (!gameContext_.isColourSelected) {
+                    playWhiteButton_.handleEvent(event);
+                    playBlackButton_.handleEvent(event);
+                } else {
+                    if (!gameContext_.isEngineModeSelected) {
+                        selectEngineNoviceMode_.handleEvent(event);
+                        selectEngineEasyMode_.handleEvent(event);
+                        selectEngineMediumMode_.handleEvent(event);
+                        selectEngineHardMode_.handleEvent(event);
+                        selectEngineGrandmasterMode_.handleEvent(event);
+                    }
                 }
             }
         }
@@ -123,21 +143,26 @@ void MenuState::render()
     text.setPosition((600 - text.getGlobalBounds().width) / 2, 50);
     window_.draw(text);
 
-    if (!gameContext_.isModeSelected) {
-        playWithComputerButton_.draw();
-        playTwoPlayersButton_.draw();
+    if (!gameContext_.isCheckersTypeSelected) {
+        selectInternationalTypeButton_.draw();
+        selectRussianTypeButton_.draw();
     } else {
-        if (gameContext_.mode == MODE::COMPUTER) {
-            if (!gameContext_.isColourSelected) {
-                playWhiteButton_.draw();
-                playBlackButton_.draw();
-            } else {
-                if (!gameContext_.isEngineModeSelected) {
-                    selectEngineNoviceMode_.draw();
-                    selectEngineEasyMode_.draw();
-                    selectEngineMediumMode_.draw();
-                    selectEngineHardMode_.draw();
-                    selectEngineGrandmasterMode_.draw();
+        if (!gameContext_.isModeSelected) {
+            playWithComputerButton_.draw();
+            playTwoPlayersButton_.draw();
+        } else {
+            if (gameContext_.mode == MODE::COMPUTER) {
+                if (!gameContext_.isColourSelected) {
+                    playWhiteButton_.draw();
+                    playBlackButton_.draw();
+                } else {
+                    if (!gameContext_.isEngineModeSelected) {
+                        selectEngineNoviceMode_.draw();
+                        selectEngineEasyMode_.draw();
+                        selectEngineMediumMode_.draw();
+                        selectEngineHardMode_.draw();
+                        selectEngineGrandmasterMode_.draw();
+                    }
                 }
             }
         }

@@ -8,8 +8,13 @@
 #include "Position.hpp"
 
 enum class COLOUR {
-    WHITE,
+    WHITE = 0,
     BLACK
+};
+
+enum class CHECKERS_TYPE {
+    RUSSIAN = 0,
+    INTERNATIONAL,
 };
 
 class Checkers {
@@ -17,6 +22,7 @@ private:
     Board board_;
     std::unordered_map<Position, std::vector<Move>> validMoves_;
     COLOUR currentColour_;
+    CHECKERS_TYPE checkersType_;
 
     bool isWithinBoard(const Position& p) const;
     void generateValidMoves();
@@ -34,6 +40,7 @@ public:
     Checkers(const Checkers& other);
 
     void reset();
+    void setCheckersType(CHECKERS_TYPE ct);
 
     std::vector<Move> getValidMoves(const Position& p) const;
     const std::unordered_map<Position, std::vector<Move>>& getValidMoves() const;

@@ -14,15 +14,18 @@ enum class MODE {
 enum class ENGINE_MODE;
 
 struct GameContext {
+    CHECKERS_TYPE checkersType;
     MODE mode;
     COLOUR playerColour;
     ENGINE_MODE engineMode;
+    bool isCheckersTypeSelected{false};
     bool isModeSelected{false};
     bool isColourSelected{false};
     bool isEngineModeSelected{false};
 
     void reset()
     {
+        isCheckersTypeSelected = false;
         isModeSelected = false;
         isColourSelected = false;
         isEngineModeSelected = false;
@@ -42,7 +45,6 @@ private:
 
 public:
     static constexpr int WINDOW_WIDTH{600};
-    static constexpr int BOARD_SIZE{8};  // ???
 
     Game();
 

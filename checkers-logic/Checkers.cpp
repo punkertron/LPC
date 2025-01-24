@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <memory>
+#include <stdexcept>
 #include <utility>
 
 #include "Board.hpp"
@@ -10,7 +11,6 @@
 
 Checkers::Checkers()
 {
-    reset();
 }
 
 Checkers::Checkers(const Checkers& other) : board_{other.board_}, currentColour_{other.getCurrentColour()}
@@ -23,19 +23,43 @@ void Checkers::reset()
     currentColour_ = COLOUR::WHITE;
     board_.reset();
 
-    for (int i = 0; i < 3; ++i) {
+    int lastRowBlack;
+    int firstRowWhite;
+    switch (checkersType_) {
+        case CHECKERS_TYPE::RUSSIAN:
+            board_.setBoardType(BOARD_TYPE::EIGHTxEIGHT);
+            lastRowBlack = 3;
+            firstRowWhite = 5;
+            break;
+
+        case CHECKERS_TYPE::INTERNATIONAL:
+            board_.setBoardType(BOARD_TYPE::TENxTEN);
+            lastRowBlack = 4;
+            firstRowWhite = 6;
+            break;
+
+        default:
+            throw std::logic_error("Unknown CHECKERS_TYPE");
+    }
+
+    for (int i = 0; i < lastRowBlack; ++i) {
         for (int j = (i % 2 ? 0 : 1); j < board_.getWidth(); j += 2) {
             board_(i, j).setBlackRegular();
         }
     }
 
-    for (int i = 5; i < board_.getWidth(); ++i) {
+    for (int i = firstRowWhite; i < board_.getWidth(); ++i) {
         for (int j = (i % 2 ? 0 : 1); j < board_.getWidth(); j += 2) {
             board_(i, j).setWhiteRegular();
         }
     }
 
     generateValidMoves();
+}
+
+void Checkers::setCheckersType(CHECKERS_TYPE ct)
+{
+    checkersType_ = ct;
 }
 
 std::vector<Move> Checkers::getValidMoves(const Position& p) const
@@ -61,8 +85,12 @@ void Checkers::makeMove(const Move& m)
         if (move->beatenPiecePos.isValid())
             board_(move->beatenPiecePos).setEmpty();
         std::swap(board_(move->to), board_(move->from));
-        if ((move->to.row == 0 && currentColour_ == COLOUR::WHITE) ||
-            (move->to.row == board_.getWidth() - 1 && currentColour_ == COLOUR::BLACK)) {
+
+        // no promotion during capture process in International checkers,
+        // but we can promote if the move is last in the seria
+        if ((checkersType_ == CHECKERS_TYPE::RUSSIAN || (!move->nextMove)) &&
+            ((move->to.row == 0 && currentColour_ == COLOUR::WHITE) ||
+             (move->to.row == board_.getWidth() - 1 && currentColour_ == COLOUR::BLACK))) {
             if (board_(move->to).isRegular()) {
                 board_(move->to).promoteToQueen();
             }
@@ -110,6 +138,45 @@ bool Checkers::isWithinBoard(const Position& p) const
     return p.row >= 0 && p.row < board_.getWidth() && p.col >= 0 && p.col < board_.getWidth();
 }
 
+static inline int findMaxCaptures(std::unordered_map<Position, std::vector<Move>>& moves)
+{
+    int maxCaptures = 0;
+    for (const auto& pair : moves) {
+        for (const auto& m : pair.second) {
+            const Move* move = &m;
+            int i = 0;
+            do {
+                ++i;
+                move = move->nextMove.get();
+            } while (move);
+            maxCaptures = std::max(i, maxCaptures);
+        }
+    }
+    return maxCaptures;
+}
+
+static inline void removeNonMaxBeatMoves(std::unordered_map<Position, std::vector<Move>>& validMoves)
+{
+    int maxCaptures = findMaxCaptures(validMoves);
+    for (auto& [pos, moves] : validMoves) {
+        moves.erase(std::remove_if(moves.begin(), moves.end(),
+                                   [maxCaptures](const Move& m) {
+                                       const Move* move = &m;
+                                       int i = 0;
+                                       do {
+                                           ++i;
+                                           move = move->nextMove.get();
+                                       } while (move);
+                                       return i < maxCaptures;
+                                   }),
+                    moves.end());
+    }
+
+    std::erase_if(validMoves, [](const auto& pair) {
+        return pair.second.empty();
+    });
+}
+
 void Checkers::generateValidMoves()
 {
     validMoves_.clear();
@@ -131,6 +198,10 @@ void Checkers::generateValidMoves()
     processMoves([this](const Position& pos, std::vector<Move>& moves) {
         addBeatMoves(pos, moves);
     });
+    // Save only moves with the most amount of captured pieces
+    if (validMoves_.size() > 0 && checkersType_ == CHECKERS_TYPE::INTERNATIONAL) {
+        removeNonMaxBeatMoves(validMoves_);
+    }
 
     // user must beat if there is such possibility.
     // so generate moves without captures only if there is no beat moves
@@ -222,8 +293,9 @@ void Checkers::processCapture(const Position& initial, const Position& enemy, co
 
     if (newBoardCopy(landing).isRegular()) {
         auto colour = newBoardCopy(landing).getColour();
-        if ((landing.row == 0 && colour == COLOUR::WHITE) ||
-            (landing.row == board_.getWidth() - 1 && colour == COLOUR::BLACK)) {
+        // no promotion during capture process in International checkers
+        if (checkersType_ == CHECKERS_TYPE::RUSSIAN && ((landing.row == 0 && colour == COLOUR::WHITE) ||
+                                                        (landing.row == board_.getWidth() - 1 && colour == COLOUR::BLACK))) {
             newBoardCopy(landing).promoteToQueen();
         }
     }

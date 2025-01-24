@@ -1,14 +1,14 @@
 # LPC -  Let's Play Checkers!!
 
 A classic Checkers (Draughts) game written in modern C++20, featuring both local two-player mode and various AI opponents, rendered with SFML.<br/>
-Only Russian checkers is supported now.
+International and Russian checkers is supported now.
 
 ---
 
 ## Features
 
 - **Board Logic**  
-  - 8×8 board with automatic move generation and capture rules.  
+  - 10×10 (or 8×8 in case of Rissian checkers) board with automatic move generation and capture rules.  
   - Piece promotion (regular to queen) at the opposite side.  
   - Chained captures supported (multiple jumps in one turn).  
 
@@ -29,17 +29,18 @@ Only Russian checkers is supported now.
 
 
 <div style="display: flex; justify-content: center;">
-  <img src="assets/Main_menu.png" alt="Main menu" width="400" style="margin-right: 5px;" />
-  <img src="assets/select_colour.png" alt="Select colour" width="400" />
+  <img src="assets/select_type.png" alt="Select type" width="400" style="margin-right: 5px;" />
+  <img src="assets/select_mode.png" alt="Select Mode" width="400" />
 </div>
 
 
 <div style="display: flex; justify-content: center;">
-  <img src="assets/select_mode.png" alt="Select mode" width="400" style="margin-right: 5px;" />
-  <img src="assets/game.png" alt="Game in progress" width="400" />
+  <img src="assets/select_colour.png" alt="Select colour" width="400" style="margin-right: 5px;" />
+  <img src="assets/select_computer_mode.png" alt="Select Computer Mode" width="400" />
 </div>
 
 <div style="display: flex; justify-content: center;">
+<img src="assets/game.png" alt="Game in progress" width="400" style="margin-right: 5px;" />
   <img src="assets/game_result.png" alt="Final" width="400" />
 </div>
 
@@ -116,17 +117,18 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 ## Usage
 
 1. Launch the game — a window will open with the main menu.
-2. Select Game Mode — either play against the computer (`With Computer`) or another human locally (`Two Players`).
-3. (Computer mode only) Choose Your Colour — play as White or Black.
-4. (Computer mode only) Select Difficulty — choose from `Novice`, `Easy`, `Medium`, `Hard`, or `Grandmaster`.
-5. Enjoy playing — click the squares to select a piece and move it. Possible moves are highlighted automatically.
-6. Press `ESC` anytime to return to the main menu.
+2. Select Checkers type (`International` or `Russian`).
+3. Select Game Mode — either play against the computer (`With Computer`) or another human locally (`Two Players`).
+4. (Computer mode only) Choose Your Colour — play as White or Black.
+5. (Computer mode only) Select Difficulty — choose from `Novice`, `Easy`, `Medium`, `Hard`, or `Grandmaster`.
+6. Enjoy playing — click the squares to select a piece and move it. Possible moves are highlighted automatically.
+7. Press `ESC` anytime to return to the main menu.
 
 ---
 
 ## TODO
 1. **Add Additional Variants / Rules**
-    - Option for `10×10` International Checkers.
+    - Option for `12×12` Canadian Checkers.
 
 2. **Implement Undo / Redo**
     - Track and revert moves for convenience.

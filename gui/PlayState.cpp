@@ -1,6 +1,7 @@
 #include "PlayState.hpp"
 
 #include <algorithm>
+#include <cassert>
 #include <utility>
 
 #include "Game.hpp"
@@ -136,8 +137,8 @@ void PlayState::update()
 
 void PlayState::drawBoard()
 {
-    for (int row = 0; row < Game::BOARD_SIZE; ++row) {
-        for (int col = 0; col < Game::BOARD_SIZE; ++col) {
+    for (int row = 0; row < copyBoard_.getWidth(); ++row) {
+        for (int col = 0; col < copyBoard_.getWidth(); ++col) {
             sf::RectangleShape& square = ((row + col) % 2 == 0 ? whiteSquare_ : blackSquare_);
             square.setPosition(col * tile_, row * tile_);
             window_.draw(square);
@@ -177,8 +178,8 @@ void PlayState::render()
     drawBoard();
 
     // draw pieces
-    for (int row = 0; row < Game::BOARD_SIZE; ++row) {
-        for (int col = (row % 2 ? 0 : 1); col < Game::BOARD_SIZE; col += 2) {
+    for (int row = 0; row < copyBoard_.getWidth(); ++row) {
+        for (int col = (row % 2 ? 0 : 1); col < copyBoard_.getWidth(); col += 2) {
             if (auto piece = copyBoard_(row, col); piece.isNotEmpty()) {
                 if (!isMoveInProcess_ || !(lastSelectedPosition_ == Position{row, col})) {
                     drawPiece(Position{row, col});
@@ -260,7 +261,7 @@ void PlayState::drawPiece(Position pos, bool isMoving)
     window_.draw(shape);
     if (piece.isQueen()) {
         sf::Sprite sprite(resourceManager_.getQueenTexture());
-        sf::Vector2f currentPosSprite = currentPos + sf::Vector2f{12, 10};
+        sf::Vector2f currentPosSprite = currentPos + sf::Vector2f(offsetForQueenTexture_, offsetForQueenTexture_);
 
         sprite.setPosition(currentPosSprite);
         window_.draw(sprite);
@@ -269,6 +270,7 @@ void PlayState::drawPiece(Position pos, bool isMoving)
 
 void PlayState::reset()
 {
+    checkers_.setCheckersType(gameContext_.checkersType);
     checkers_.reset();
     copyBoard_ = checkers_.getCopyBoard();
     lastSelectedPosition_.reset();
@@ -290,11 +292,13 @@ void PlayState::reset()
     }
 
     // calculate default tiles, radiuses etc
-    tile_ = Game::WINDOW_WIDTH / Game::BOARD_SIZE;  // FIXME: take values from context?
+    tile_ = Game::WINDOW_WIDTH / copyBoard_.getWidth();
     pieceRadius_ = (tile_ - 20) / 2.0f;
-    highlightRadius_ = pieceRadius_ / 2;
     offsetForPiece_ = (tile_ - 2 * pieceRadius_) / 2.0f;
+    highlightRadius_ = pieceRadius_ / 2;
     offsetForHighlight_ = (tile_ - 2 * highlightRadius_) / 2.0f;
+    offsetForQueenTexture_ = (tile_ - 32) / 2.0f - offsetForPiece_;  // width of Texture is 32
+    assert(offsetForQueenTexture_ > 0);
 
     highlightCircle_.setRadius(highlightRadius_);
     whitePieceCircle_.setRadius(pieceRadius_);

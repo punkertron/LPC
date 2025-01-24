@@ -46,9 +46,10 @@ private:
     //   with the size 10x10, and we should recalculate this parameters
     int tile_;
     float pieceRadius_;
-    float highlightRadius_;
     float offsetForPiece_;
+    float highlightRadius_;
     float offsetForHighlight_;
+    float offsetForQueenTexture_;
 
     Position getPositionOnBoardFromMouse(int x, int y);
     void drawBoard();
