@@ -293,7 +293,25 @@ void PlayState::reset()
 
     // calculate default tiles, radiuses etc
     tile_ = Game::WINDOW_WIDTH / copyBoard_.getWidth();
-    pieceRadius_ = (tile_ - 20) / 2.0f;
+    int offsetForRadius;
+    switch (gameContext_.checkersType) {
+        case CHECKERS_TYPE::INTERNATIONAL:
+            offsetForRadius = 20;
+            break;
+
+        case CHECKERS_TYPE::RUSSIAN:
+            offsetForRadius = 22;
+            break;
+
+        case CHECKERS_TYPE::CANADIAN:
+            offsetForRadius = 15;
+            break;
+
+        default:
+            throw std::logic_error("Unknown CHECKERS_TYPE");
+    }
+
+    pieceRadius_ = (tile_ - offsetForRadius) / 2.0f;
     offsetForPiece_ = (tile_ - 2 * pieceRadius_) / 2.0f;
     highlightRadius_ = pieceRadius_ / 2;
     offsetForHighlight_ = (tile_ - 2 * highlightRadius_) / 2.0f;

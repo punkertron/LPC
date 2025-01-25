@@ -13,6 +13,7 @@ class MenuState final : public State {
 private:
     Button selectInternationalTypeButton_;
     Button selectRussianTypeButton_;
+    Button selectCanadianTypeButton_;
     Button playWithComputerButton_;
     Button playTwoPlayersButton_;
     Button playWhiteButton_;

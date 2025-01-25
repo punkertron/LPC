@@ -7,11 +7,12 @@
 
 struct Position;
 
-constexpr int MAX_BOARD_WIDTH = 50;
+constexpr int MAX_BOARD_WIDTH = 72;
 
 enum class BOARD_TYPE : uint8_t {
     EIGHTxEIGHT = 8,
     TENxTEN = 10,
+    TWELVExTWELVE = 12,
 };
 
 struct Board {
@@ -27,4 +28,5 @@ public:
     void setBoardType(BOARD_TYPE bt);
     void reset();
     int getWidth() const;
+    BOARD_TYPE getBoardType() const;
 };

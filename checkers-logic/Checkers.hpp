@@ -15,6 +15,7 @@ enum class COLOUR {
 enum class CHECKERS_TYPE {
     RUSSIAN = 0,
     INTERNATIONAL,
+    CANADIAN,
 };
 
 class Checkers {

@@ -11,6 +11,7 @@
 
 Checkers::Checkers()
 {
+    board_.reset();
 }
 
 Checkers::Checkers(const Checkers& other) : board_{other.board_}, currentColour_{other.getCurrentColour()}
@@ -21,7 +22,7 @@ void Checkers::reset()
 {
     // reset everyting
     currentColour_ = COLOUR::WHITE;
-    board_.reset();
+    // board_.reset();
 
     int lastRowBlack;
     int firstRowWhite;
@@ -38,8 +39,14 @@ void Checkers::reset()
             firstRowWhite = 6;
             break;
 
+        case CHECKERS_TYPE::CANADIAN:
+            board_.setBoardType(BOARD_TYPE::TWELVExTWELVE);
+            lastRowBlack = 5;
+            firstRowWhite = 7;
+            break;
+
         default:
-            throw std::logic_error("Unknown CHECKERS_TYPE");
+            throw std::logic_error("Unknown CHECKERS_TYPE in Checkers::reset()");
     }
 
     for (int i = 0; i < lastRowBlack; ++i) {
@@ -59,7 +66,24 @@ void Checkers::reset()
 
 void Checkers::setCheckersType(CHECKERS_TYPE ct)
 {
+    board_.reset();
     checkersType_ = ct;
+    switch (checkersType_) {
+        case CHECKERS_TYPE::INTERNATIONAL:
+            board_.setBoardType(BOARD_TYPE::TENxTEN);
+            break;
+
+        case CHECKERS_TYPE::RUSSIAN:
+            board_.setBoardType(BOARD_TYPE::EIGHTxEIGHT);
+            break;
+
+        case CHECKERS_TYPE::CANADIAN:
+            board_.setBoardType(BOARD_TYPE::TWELVExTWELVE);
+            break;
+
+        default:
+            throw std::logic_error("Unknown CHECKERS_TYPE");
+    }
 }
 
 std::vector<Move> Checkers::getValidMoves(const Position& p) const

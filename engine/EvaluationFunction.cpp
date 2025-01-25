@@ -21,33 +21,59 @@
  */
 
 #include <array>
+#include <cassert>
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include "Board.hpp"
 #include "Checkers.hpp"
 #include "Piece.hpp"
 
-constexpr std::array<float, 8> rowValuesForRegularPiece = {
+//////////////
+// EIGHTxEIGHT
+constexpr std::array<float, 8> rowValuesForRegularPieceEIGHTxEIGHT = {
     {0, 0, 0, 0.2f, 0.4f, 0.5f, 0.7f, 1.f}
 };
 
-constexpr std::array<float, 8> rowValuesForQueen = {
+constexpr std::array<float, 8> rowValuesForQueenEIGHTxEIGHT = {
     {0, 0.3f, 0.4f, 0.5f, 0.5f, 0.4f, 0.3f, 0.f}
 };
 
-constexpr std::array<float, 4> columnValues = {
+constexpr std::array<float, 4> columnValuesEIGHTxEIGHT = {
     {0, 0.06f, 0.06f, 0}
 };
+// EIGHTxEIGHT
 
-static inline float getRowValue(const Piece p, int i)
-{
-    if (p.isRegular()) {
-        return rowValuesForRegularPiece[i];
-    } else {
-        return rowValuesForQueen[i];
-    }
-}
+//////////////
+// TENxTEN
+constexpr std::array<float, 10> rowValuesForRegularPieceTENxTEN = {
+    {0, 0, 0, 0, 0.2f, 0.3f, 0.4f, 0.5f, 0.7f, 1.f}
+};
+
+constexpr std::array<float, 10> rowValuesForQueenTENxTEN = {
+    {0, 0.3f, 0.4f, 0.5f, 0.6f, 0.6f, 0.5f, 0.4f, 0.3f, 0.f}
+};
+
+constexpr std::array<float, 5> columnValuesTENxTEN = {
+    {0, 0.06f, 0.08f, 0.06f, 0}
+};
+// TENxTEN
+
+//////////////
+// TWELVExTWELVE
+constexpr std::array<float, 12> rowValuesForRegularPieceTWELVExTWELVE = {
+    {0, 0, 0, 0, 0.2f, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.8f, 1.f}
+};
+
+constexpr std::array<float, 12> rowValuesForQueenTWELVExTWELVE = {
+    {0, 0.3f, 0.4f, 0.5f, 0.6f, 0.7f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.f}
+};
+
+constexpr std::array<float, 6> columnValuesTWELVExTWELVE = {
+    {0, 0.06f, 0.08f, 0.8f, 0.06f, 0}
+};
+// TWELVExTWELVE
 
 static inline float getPieceValue(const Piece p)
 {
@@ -55,6 +81,65 @@ static inline float getPieceValue(const Piece p)
         return 3.0f;
     } else {  // QUEEN
         return 12.0f;
+    }
+}
+
+static inline float getRowValue(const BOARD_TYPE bt, const Piece p, int i)
+{
+    if (p.isRegular()) {
+        switch (bt) {
+            case BOARD_TYPE::EIGHTxEIGHT:
+                assert(i < 8);
+                return rowValuesForRegularPieceEIGHTxEIGHT[i];
+
+            case BOARD_TYPE::TENxTEN:
+                assert(i < 10);
+                return rowValuesForRegularPieceTENxTEN[i];
+
+            case BOARD_TYPE::TWELVExTWELVE:
+                assert(i < 12);
+                return rowValuesForRegularPieceTWELVExTWELVE[i];
+
+            default:
+                throw std::logic_error("Unknown BOARD_TYPE in EvaluationFunction");
+        }
+    } else {  // Queen
+        switch (bt) {
+            case BOARD_TYPE::EIGHTxEIGHT:
+                assert(i < 8);
+                return rowValuesForQueenEIGHTxEIGHT[i];
+
+            case BOARD_TYPE::TENxTEN:
+                assert(i < 10);
+                return rowValuesForQueenTENxTEN[i];
+
+            case BOARD_TYPE::TWELVExTWELVE:
+                assert(i < 12);
+                return rowValuesForQueenTWELVExTWELVE[i];
+
+            default:
+                throw std::logic_error("Unknown BOARD_TYPE in EvaluationFunction");
+        }
+    }
+}
+
+static inline float getColumnValue(const BOARD_TYPE bt, int j)
+{
+    switch (bt) {
+        case BOARD_TYPE::EIGHTxEIGHT:
+            assert(j < 8);
+            return columnValuesEIGHTxEIGHT[j / 2];
+
+        case BOARD_TYPE::TENxTEN:
+            assert(j < 10);
+            return columnValuesTENxTEN[j / 2];
+
+        case BOARD_TYPE::TWELVExTWELVE:
+            assert(j < 12);
+            return columnValuesTWELVExTWELVE[j / 2];
+
+        default:
+            throw std::logic_error("Unknown BOARD_TYPE in EvaluationFunction");
     }
 }
 
@@ -68,12 +153,12 @@ float evaluatePosition(const Board& board)
             if (auto piece = board(i, j); piece.isNotEmpty()) {
                 if (piece.getColour() == COLOUR::WHITE) {
                     whiteSum += getPieceValue(piece);
-                    whiteSum += getRowValue(piece, board.getWidth() - 1 - i);
-                    whiteSum += columnValues[j / 2];
+                    whiteSum += getRowValue(board.getBoardType(), piece, board.getWidth() - 1 - i);
+                    whiteSum += getColumnValue(board.getBoardType(), j);
                 } else {
                     blackSum += getPieceValue(piece);
-                    blackSum += getRowValue(piece, i);
-                    blackSum += columnValues[j / 2];
+                    blackSum += getRowValue(board.getBoardType(), piece, i);
+                    blackSum += getColumnValue(board.getBoardType(), j);
                 }
             }
         }

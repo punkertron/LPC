@@ -8,14 +8,16 @@
 Piece& Board::operator()(int row, int col)
 {
     assert((boardType_ == BOARD_TYPE::EIGHTxEIGHT ? row * static_cast<int>(boardType_) + col < 64
-                                                  : row * static_cast<int>(boardType_) + col < 100));
+            : boardType_ == BOARD_TYPE::TENxTEN   ? row * static_cast<int>(boardType_) + col < 100
+                                                  : row * static_cast<int>(boardType_) + col < 144));
     return board_[(row * static_cast<int>(boardType_) + col) / 2];
 }
 
 Piece Board::operator()(int row, int col) const
 {
     assert((boardType_ == BOARD_TYPE::EIGHTxEIGHT ? row * static_cast<int>(boardType_) + col < 64
-                                                  : row * static_cast<int>(boardType_) + col < 100));
+            : boardType_ == BOARD_TYPE::TENxTEN   ? row * static_cast<int>(boardType_) + col < 100
+                                                  : row * static_cast<int>(boardType_) + col < 144));
     return board_[(row * static_cast<int>(boardType_) + col) / 2];
 }
 
@@ -49,4 +51,9 @@ void Board::reset()
 int Board::getWidth() const
 {
     return static_cast<int>(boardType_);
+}
+
+BOARD_TYPE Board::getBoardType() const
+{
+    return boardType_;
 }

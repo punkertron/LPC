@@ -15,6 +15,7 @@ MenuState::MenuState(sf::RenderWindow& window, StateManager& stateManager, Resou
     //// Select Checkers type
     selectInternationalTypeButton_{window, 280, resourceManager_.getFont(), "International", sf::Color{156, 62, 62}},
     selectRussianTypeButton_{window_, 380, resourceManager_.getFont(), "Russian", sf::Color{177, 143, 144}},
+    selectCanadianTypeButton_{window_, 480, resourceManager_.getFont(), "Canadian", sf::Color{255, 21, 58}},
     //// Select Mode
     playWithComputerButton_{window, 280, resourceManager_.getFont(), "With Computer", sf::Color{34, 224, 216}},
     playTwoPlayersButton_{window_, 380, resourceManager_.getFont(), "Two Players", sf::Color{253, 0, 201}},
@@ -37,6 +38,11 @@ MenuState::MenuState(sf::RenderWindow& window, StateManager& stateManager, Resou
     selectRussianTypeButton_.setCallback(
         [&checkersType = gameContext_.checkersType, &isCheckersTypeSelected = gameContext_.isCheckersTypeSelected]() {
             checkersType = CHECKERS_TYPE::RUSSIAN;
+            isCheckersTypeSelected = true;
+        });
+    selectCanadianTypeButton_.setCallback(
+        [&checkersType = gameContext_.checkersType, &isCheckersTypeSelected = gameContext_.isCheckersTypeSelected]() {
+            checkersType = CHECKERS_TYPE::CANADIAN;
             isCheckersTypeSelected = true;
         });
 
@@ -95,6 +101,7 @@ void MenuState::handleEvent(const sf::Event& event)
     if (!gameContext_.isCheckersTypeSelected) {
         selectInternationalTypeButton_.handleEvent(event);
         selectRussianTypeButton_.handleEvent(event);
+        selectCanadianTypeButton_.handleEvent(event);
     } else {
         if (!gameContext_.isModeSelected) {
             playWithComputerButton_.handleEvent(event);
@@ -146,6 +153,7 @@ void MenuState::render()
     if (!gameContext_.isCheckersTypeSelected) {
         selectInternationalTypeButton_.draw();
         selectRussianTypeButton_.draw();
+        selectCanadianTypeButton_.draw();
     } else {
         if (!gameContext_.isModeSelected) {
             playWithComputerButton_.draw();
