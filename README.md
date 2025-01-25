@@ -1,14 +1,18 @@
 # LPC -  Let's Play Checkers!!
 
 A classic Checkers (Draughts) game written in modern C++20, featuring both local two-player mode and various AI opponents, rendered with SFML.<br/>
-International and Russian checkers is supported now.
+The following checkers variants are supported:
+- **International**
+- **Russian**
+- **Canadian**
+- **Brazilian**
 
 ---
 
 ## Features
 
 - **Board Logic**  
-  - 10×10 (or 8×8 in case of Rissian checkers) board with automatic move generation and capture rules.  
+  - Board with automatic move generation and capture rules.  
   - Piece promotion (regular to queen) at the opposite side.  
   - Chained captures supported (multiple jumps in one turn).  
 
@@ -52,7 +56,7 @@ This project is split into three main parts:
 
 1. **Checkers-logic**
    - **`Checkers`** class: Handles all move logic, captures, piece promotion, and maintains the turn order. Stores **Board**
-   - **`Board`** class: Maintains both 8×8 and 10x10 grid using space-efficient std::array. sizeof(Board) = 51
+   - **`Board`** class: Maintains 8×8 (Russian and Brazilian), 10×10 (International) and 12×12 (Canadian) grid using space-efficient std::array.
    - Exposes functions for retrieving valid moves, making moves, and resetting the board.
    - Tracks game result and winner determination.
 
@@ -117,7 +121,7 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 ## Usage
 
 1. Launch the game — a window will open with the main menu.
-2. Select Checkers type (`International` or `Russian`).
+2. Select Checkers type (`International`, `Russian`, `Canadian`, `Brazilian`).
 3. Select Game Mode — either play against the computer (`With Computer`) or another human locally (`Two Players`).
 4. (Computer mode only) Choose Your Colour — play as White or Black.
 5. (Computer mode only) Select Difficulty — choose from `Novice`, `Easy`, `Medium`, `Hard`, or `Grandmaster`.
@@ -127,23 +131,22 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 ---
 
 ## TODO
-1. **Add Additional Variants / Rules**
-    - Option for `12×12` Canadian Checkers.
-
-2. **Implement Undo / Redo**
+1. **Implement Undo / Redo**
     - Track and revert moves for convenience.
 
-3. **Improve AI**
+2. **Improve AI**
     - Implement a transposition table or caching.
     - Add multhithreading (`Grandmaster` mode can be faster).
 
-4. **Online Multiplayer**
+3. **Online Multiplayer**
     - Introduce network play for remote two-player matches.
 
-5. **UI Enhancements**
+4. **UI Enhancements**
     - Turn the board around if playing for black against the computer.
     - Animate piece captures more smoothly.
     - Add sounds and a game timer.
 
-6. **Automated Testing**
+5. **Automated Testing**
     - Add unit tests for critical Board methods and engine functionality.
+
+6. **Add Documentation**
