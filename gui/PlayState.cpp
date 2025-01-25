@@ -295,12 +295,13 @@ void PlayState::reset()
     tile_ = Game::WINDOW_WIDTH / copyBoard_.getWidth();
     int offsetForRadius;
     switch (gameContext_.checkersType) {
-        case CHECKERS_TYPE::INTERNATIONAL:
-            offsetForRadius = 20;
-            break;
-
+        case CHECKERS_TYPE::BRAZILIAN:
         case CHECKERS_TYPE::RUSSIAN:
             offsetForRadius = 22;
+            break;
+
+        case CHECKERS_TYPE::INTERNATIONAL:
+            offsetForRadius = 20;
             break;
 
         case CHECKERS_TYPE::CANADIAN:

@@ -28,6 +28,7 @@ void Checkers::reset()
     int firstRowWhite;
     switch (checkersType_) {
         case CHECKERS_TYPE::RUSSIAN:
+        case CHECKERS_TYPE::BRAZILIAN:
             board_.setBoardType(BOARD_TYPE::EIGHTxEIGHT);
             lastRowBlack = 3;
             firstRowWhite = 5;
@@ -69,12 +70,13 @@ void Checkers::setCheckersType(CHECKERS_TYPE ct)
     board_.reset();
     checkersType_ = ct;
     switch (checkersType_) {
-        case CHECKERS_TYPE::INTERNATIONAL:
-            board_.setBoardType(BOARD_TYPE::TENxTEN);
+        case CHECKERS_TYPE::RUSSIAN:
+        case CHECKERS_TYPE::BRAZILIAN:
+            board_.setBoardType(BOARD_TYPE::EIGHTxEIGHT);
             break;
 
-        case CHECKERS_TYPE::RUSSIAN:
-            board_.setBoardType(BOARD_TYPE::EIGHTxEIGHT);
+        case CHECKERS_TYPE::INTERNATIONAL:
+            board_.setBoardType(BOARD_TYPE::TENxTEN);
             break;
 
         case CHECKERS_TYPE::CANADIAN:
@@ -222,8 +224,8 @@ void Checkers::generateValidMoves()
     processMoves([this](const Position& pos, std::vector<Move>& moves) {
         addBeatMoves(pos, moves);
     });
-    // Save only moves with the most amount of captured pieces
-    if (validMoves_.size() > 0 && checkersType_ == CHECKERS_TYPE::INTERNATIONAL) {
+    // Save only moves with the most amount of captured pieces for INTERNATIONAL, CANADIAN and BRAZILIAN
+    if (validMoves_.size() > 0 && checkersType_ != CHECKERS_TYPE::RUSSIAN) {
         removeNonMaxBeatMoves(validMoves_);
     }
 

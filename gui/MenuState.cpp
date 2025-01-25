@@ -13,9 +13,10 @@ MenuState::MenuState(sf::RenderWindow& window, StateManager& stateManager, Resou
         window, stateManager, resourceManager, gameContext
 },
     //// Select Checkers type
-    selectInternationalTypeButton_{window, 280, resourceManager_.getFont(), "International", sf::Color{156, 62, 62}},
-    selectRussianTypeButton_{window_, 380, resourceManager_.getFont(), "Russian", sf::Color{177, 143, 144}},
-    selectCanadianTypeButton_{window_, 480, resourceManager_.getFont(), "Canadian", sf::Color{255, 21, 58}},
+    selectInternationalTypeButton_{window, 250, resourceManager_.getFont(), "International", sf::Color{156, 62, 62}},
+    selectRussianTypeButton_{window_, 320, resourceManager_.getFont(), "Russian", sf::Color{177, 143, 144}},
+    selectCanadianTypeButton_{window_, 390, resourceManager_.getFont(), "Canadian", sf::Color{255, 21, 58}},
+    selectBrazilianTypeButton_{window_, 460, resourceManager_.getFont(), "Brazilian", sf::Color{123, 206, 64}},
     //// Select Mode
     playWithComputerButton_{window, 280, resourceManager_.getFont(), "With Computer", sf::Color{34, 224, 216}},
     playTwoPlayersButton_{window_, 380, resourceManager_.getFont(), "Two Players", sf::Color{253, 0, 201}},
@@ -43,6 +44,11 @@ MenuState::MenuState(sf::RenderWindow& window, StateManager& stateManager, Resou
     selectCanadianTypeButton_.setCallback(
         [&checkersType = gameContext_.checkersType, &isCheckersTypeSelected = gameContext_.isCheckersTypeSelected]() {
             checkersType = CHECKERS_TYPE::CANADIAN;
+            isCheckersTypeSelected = true;
+        });
+    selectBrazilianTypeButton_.setCallback(
+        [&checkersType = gameContext_.checkersType, &isCheckersTypeSelected = gameContext_.isCheckersTypeSelected]() {
+            checkersType = CHECKERS_TYPE::BRAZILIAN;
             isCheckersTypeSelected = true;
         });
 
@@ -102,6 +108,7 @@ void MenuState::handleEvent(const sf::Event& event)
         selectInternationalTypeButton_.handleEvent(event);
         selectRussianTypeButton_.handleEvent(event);
         selectCanadianTypeButton_.handleEvent(event);
+        selectBrazilianTypeButton_.handleEvent(event);
     } else {
         if (!gameContext_.isModeSelected) {
             playWithComputerButton_.handleEvent(event);
@@ -154,6 +161,7 @@ void MenuState::render()
         selectInternationalTypeButton_.draw();
         selectRussianTypeButton_.draw();
         selectCanadianTypeButton_.draw();
+        selectBrazilianTypeButton_.draw();
     } else {
         if (!gameContext_.isModeSelected) {
             playWithComputerButton_.draw();

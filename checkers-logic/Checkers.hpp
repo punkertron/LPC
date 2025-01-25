@@ -16,6 +16,7 @@ enum class CHECKERS_TYPE {
     RUSSIAN = 0,
     INTERNATIONAL,
     CANADIAN,
+    BRAZILIAN,
 };
 
 class Checkers {

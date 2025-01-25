@@ -14,6 +14,7 @@ private:
     Button selectInternationalTypeButton_;
     Button selectRussianTypeButton_;
     Button selectCanadianTypeButton_;
+    Button selectBrazilianTypeButton_;
     Button playWithComputerButton_;
     Button playTwoPlayersButton_;
     Button playWhiteButton_;
