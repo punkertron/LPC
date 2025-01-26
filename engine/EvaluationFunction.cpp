@@ -148,17 +148,19 @@ float evaluatePosition(const Board& board)
     float whiteSum{0};
     float blackSum{0};
 
-    for (int i = 0; i < board.getWidth(); ++i) {
-        for (int j = (i % 2 ? 0 : 1); j < board.getWidth(); j += 2) {
+    int n = board.getWidth();
+    BOARD_TYPE bt = board.getBoardType();
+    for (int i = 0; i < n; ++i) {
+        for (int j = (i % 2 ? 0 : 1); j < n; j += 2) {
             if (auto piece = board(i, j); piece.isNotEmpty()) {
                 if (piece.getColour() == COLOUR::WHITE) {
                     whiteSum += getPieceValue(piece);
-                    whiteSum += getRowValue(board.getBoardType(), piece, board.getWidth() - 1 - i);
-                    whiteSum += getColumnValue(board.getBoardType(), j);
+                    whiteSum += getRowValue(bt, piece, n - 1 - i);
+                    whiteSum += getColumnValue(bt, j);
                 } else {
                     blackSum += getPieceValue(piece);
-                    blackSum += getRowValue(board.getBoardType(), piece, i);
-                    blackSum += getColumnValue(board.getBoardType(), j);
+                    blackSum += getRowValue(bt, piece, i);
+                    blackSum += getColumnValue(bt, j);
                 }
             }
         }
