@@ -8,7 +8,7 @@ struct Move {
     Position from;
     Position to;
     Position beatenPiecePos{-1, -1};
-    std::shared_ptr<Move> nextMove;  // next move in the chains of moves
+    std::shared_ptr<Move> nextMove{nullptr};  // next move in the chains of moves
 
     void reset()
     {

@@ -396,16 +396,21 @@ void Checkers::addOneStepMoves(const Position& p, std::vector<Move>& res) const
     COLOUR c = board_(p).getColour();
     int nextRow = p.row + (c == COLOUR::BLACK ? 1 : -1);
     if (int nextCol = p.col + 1; isWithinBoard({nextRow, nextCol}) && board_(nextRow, nextCol).isEmpty()) {
-        res.push_back({p.row, p.col, nextRow, nextCol});
+        res.push_back({
+            .from{p.row,   p.col  },
+            .to{nextRow, nextCol}
+        });
     }
     if (int nextCol = p.col - 1; isWithinBoard({nextRow, nextCol}) && board_(nextRow, nextCol).isEmpty()) {
-        res.push_back({p.row, p.col, nextRow, nextCol});
+        res.push_back({
+            .from{p.row,   p.col  },
+            .to{nextRow, nextCol}
+        });
     }
 }
 
 void Checkers::addQueenNonBeatMoves(const Position& p, std::vector<Move>& res) const
 {
-    COLOUR c = board_(p).getColour();
     auto directions = getMoveDirections();
     for (const auto& [dr, dc] : directions) {
         for (int nextRow = p.row + dr, nextCol = p.col + dc; isWithinBoard({nextRow, nextCol});
@@ -413,7 +418,10 @@ void Checkers::addQueenNonBeatMoves(const Position& p, std::vector<Move>& res) c
             if (board_(nextRow, nextCol).isNotEmpty()) {
                 break;
             }
-            res.push_back({p.row, p.col, nextRow, nextCol});
+            res.push_back({
+                .from{p.row,   p.col  },
+                .to{nextRow, nextCol}
+            });
         }
     }
 }
