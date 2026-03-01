@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <stdexcept>
 #include <utility>
 
 #include "Game.hpp"
@@ -11,11 +12,19 @@
 #include "ResourceManager.hpp"
 #include "StateManager.hpp"
 
+namespace
+{
+constexpr float kMoveAnimationStep = 0.05f;
+}
+
 PlayState::PlayState(sf::RenderWindow& window, StateManager& stateManager, ResourceManager& resourceManager,
                      GameContext& gameContext) :
     State{window, stateManager, resourceManager, gameContext}
 {
     highlightCircle_.setFillColor(sf::Color{0, 255, 0, 150});  // Semi-transparent green
+    capturedPieceCircle_.setFillColor(sf::Color{128, 128, 128, 110});
+    capturedPieceCircle_.setOutlineThickness(2);
+    capturedPieceCircle_.setOutlineColor(sf::Color{90, 30, 30, 150});
 
     whitePieceCircle_.setFillColor(sf::Color{240, 240, 210});
     whitePieceCircle_.setOutlineThickness(3);
@@ -26,119 +35,311 @@ PlayState::PlayState(sf::RenderWindow& window, StateManager& stateManager, Resou
     blackPieceCircle_.setOutlineColor(sf::Color{150, 150, 150});  // grey
 
     whiteSquare_.setFillColor(sf::Color(240, 217, 181));
-
     blackSquare_.setFillColor(sf::Color{181, 136, 99});
 }
 
-Position PlayState::getPositionOnBoardFromMouse(int x, int y)
+Position PlayState::getPositionOnBoardFromMouse(int x, int y) const
 {
-    int row = y / tile_;
-    int col = x / tile_;
-    return {row, col};
+    return {y / tile_, x / tile_};
 }
 
-bool PlayState::isPositionInsidePossibleMoves(Position pos)
+bool PlayState::isInsideBoard(Position pos) const
 {
-    for (const auto& m : possibleMoves_) {
-        const Move* move = &m;
-        do {
-            if (move->to == pos) {
+    const int boardWidth = boardView_.getWidth();
+    return pos.row >= 0 && pos.col >= 0 && pos.row < boardWidth && pos.col < boardWidth;
+}
+
+PlayState::UiPhase PlayState::getUiPhase() const
+{
+    if (isGameOver_) {
+        return UiPhase::GameOver;
+    }
+    if (moveState_.inProgress) {
+        return UiPhase::AnimatingMove;
+    }
+    if (selection_.hasOrigin) {
+        return UiPhase::SelectingPiece;
+    }
+    return UiPhase::Idle;
+}
+
+bool PlayState::isHumanTurn() const
+{
+    return gameContext_.mode == MODE::TWO_PLAYERS || checkers_.getCurrentColour() == gameContext_.playerColour;
+}
+
+bool PlayState::isBoardInputAllowed() const
+{
+    if (!isHumanTurn()) {
+        return false;
+    }
+
+    switch (getUiPhase()) {
+        case UiPhase::GameOver:
+            return false;
+        case UiPhase::Idle:
+        case UiPhase::SelectingPiece:
+            return true;
+        case UiPhase::AnimatingMove:
+            // Ignore clicks while an animation frame sequence is running
+            return false;
+        default:
+            return false;
+    }
+}
+
+bool PlayState::isPositionInsidePossibleMoves(Position pos) const
+{
+    for (const auto& candidate : selection_.candidates) {
+        const Move* move = &candidate;
+        while (move != nullptr && move->from != selection_.origin) {
+            move = move->nextMove.get();
+        }
+
+        for (const Move* continuation = move; continuation != nullptr; continuation = continuation->nextMove.get()) {
+            if (continuation->to == pos) {
                 return true;
             }
-            move = move->nextMove.get();
-        } while (move);
+        }
     }
     return false;
 }
 
-bool PlayState::isOneWayTo(Position to)
+bool PlayState::tryResolveSegmentCapturedPiece(Position from, Position to, Position& capturedPiecePos) const
 {
-    int cnt = 0;
-    for (const auto& m : possibleMoves_) {
-        const Move* move = &m;
+    bool found = false;
+    for (const auto& candidate : selection_.candidates) {
+        const Move* move = &candidate;
         do {
-            if (move->to == to) {
-                oneWayMove_ = cloneMove(m);
-                ++cnt;
+            if (move->from == from && move->to == to && move->beatenPiecePos.isValid()) {
+                if (!found) {
+                    capturedPiecePos = move->beatenPiecePos;
+                    found = true;
+                } else if (capturedPiecePos != move->beatenPiecePos) {
+                    return false;
+                }
             }
             move = move->nextMove.get();
-        } while (move);
+        } while (move != nullptr);
+    }
+    return found;
+}
+
+bool PlayState::hasSegmentsFrom(Position from) const
+{
+    for (const auto& candidate : selection_.candidates) {
+        const Move* move = &candidate;
+        do {
+            if (move->from == from) {
+                return true;
+            }
+            move = move->nextMove.get();
+        } while (move != nullptr);
+    }
+    return false;
+}
+
+void PlayState::clearSelection()
+{
+    selection_.clear();
+    isAwaitingChainContinuation_ = false;
+}
+
+void PlayState::selectSquare(Position pos)
+{
+    selection_.origin = pos;
+    selection_.candidates = checkers_.getValidMoves(pos);
+    selection_.hasOrigin = !selection_.candidates.empty();
+    isAwaitingChainContinuation_ = false;
+}
+
+void PlayState::handleDestinationClick(Position pos)
+{
+    if (pos == selection_.origin) {
+        if (isAwaitingChainContinuation_) {
+            return;
+        }
+        clearSelection();
+        return;
     }
 
-    return cnt == 1;
+    if (!isPositionInsidePossibleMoves(pos)) {
+        if (isAwaitingChainContinuation_) {
+            return;
+        }
+        selectSquare(pos);
+        return;
+    }
+
+    moveState_.from = selection_.origin;
+
+    std::vector<Move> filteredCandidates;
+    filteredCandidates.reserve(selection_.candidates.size());
+
+    Position commonImmediateTo{-1, -1};
+    Position commonImmediateCaptured{-1, -1};
+    bool hasCommonImmediate{false};
+    bool hasAmbiguousImmediate{false};
+
+    for (const auto& candidate : selection_.candidates) {
+        const Move* firstSegment = &candidate;
+        while (firstSegment != nullptr && firstSegment->from != selection_.origin) {
+            firstSegment = firstSegment->nextMove.get();
+        }
+        if (firstSegment == nullptr) {
+            continue;
+        }
+
+        bool reachesClickedDestination = false;
+        for (const Move* continuation = firstSegment; continuation != nullptr; continuation = continuation->nextMove.get()) {
+            if (continuation->to == pos) {
+                reachesClickedDestination = true;
+                break;
+            }
+        }
+        if (!reachesClickedDestination) {
+            continue;
+        }
+
+        filteredCandidates.push_back(cloneMove(candidate));
+        if (!hasCommonImmediate) {
+            commonImmediateTo = firstSegment->to;
+            commonImmediateCaptured = firstSegment->beatenPiecePos;
+            hasCommonImmediate = true;
+        } else if (commonImmediateTo != firstSegment->to || commonImmediateCaptured != firstSegment->beatenPiecePos) {
+            hasAmbiguousImmediate = true;
+        }
+    }
+
+    if (filteredCandidates.empty()) {
+        if (isAwaitingChainContinuation_) {
+            return;
+        }
+        selectSquare(pos);
+        return;
+    }
+
+    selection_.candidates = std::move(filteredCandidates);
+    selection_.hasOrigin = true;
+
+    moveState_.segmentCapturedPiecePos.reset();
+    if (selection_.candidates.size() == 1) {
+        // Clicking a unique chain destination allows skipping directly to that position
+        moveState_.to = pos;
+        moveState_.hasResolvedPath = true;
+        moveState_.resolvedPath = cloneMove(selection_.candidates.front());
+    } else {
+        // Multiple chains remain; animate only the next deterministic segment
+        if (!hasCommonImmediate || hasAmbiguousImmediate) {
+            return;
+        }
+        moveState_.to = commonImmediateTo;
+        moveState_.hasResolvedPath = false;
+        moveState_.resolvedPath.reset();
+        if (commonImmediateCaptured.isValid()) {
+            moveState_.segmentCapturedPiecePos = commonImmediateCaptured;
+        } else {
+            Position capturedPos;
+            if (tryResolveSegmentCapturedPiece(moveState_.from, moveState_.to, capturedPos)) {
+                moveState_.segmentCapturedPiecePos = capturedPos;
+            }
+        }
+    }
+
+    moveState_.animationProgress = 0.f;
+    moveState_.inProgress = true;
+}
+
+void PlayState::handleBoardClick(Position pos)
+{
+    if (!selection_.hasOrigin) {
+        selectSquare(pos);
+        return;
+    }
+
+    handleDestinationClick(pos);
 }
 
 void PlayState::handleEvent(const sf::Event& event)
 {
-    if (!isGameOver_) {
-        if ((gameContext_.mode == MODE::TWO_PLAYERS || checkers_.getCurrentColour() == gameContext_.playerColour) &&
-            (!isMoveInProcess_ || (isMoveInProcess_ && !isUniqueWayToNewPosition_))) {
-            if (event.type == sf::Event::MouseButtonPressed) {
-                if (event.mouseButton.button == sf::Mouse::Left) {
-                    int x = event.mouseButton.x;
-                    int y = event.mouseButton.y;
+    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
+        stateManager_.setActiveState(STATE_TYPE::MenuState);
+        return;
+    }
 
-                    if (!isSquareSelected_) {
-                        lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
-                        possibleMoves_ = checkers_.getValidMoves(lastSelectedPosition_);
-                        if (possibleMoves_.empty()) {
-                            return;
-                        }
-                        isSquareSelected_ = true;
-                    } else {
-                        auto pos = getPositionOnBoardFromMouse(x, y);
-                        if (pos == lastSelectedPosition_) {
-                            isSquareSelected_ = false;
-                            possibleMoves_.clear();
-                        } else if (isPositionInsidePossibleMoves(pos)) {
-                            isMoveInProcess_ = true;
-                            makeMoveTo_ = pos;
-                            isUniqueWayToNewPosition_ = isOneWayTo(pos);
-                        } else {
-                            lastSelectedPosition_ = getPositionOnBoardFromMouse(x, y);
-                            possibleMoves_ = checkers_.getValidMoves(lastSelectedPosition_);
-                        }
-                    }
-                }
-            }
-        }
+    if (event.type != sf::Event::MouseButtonPressed) {
+        return;
     }
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Escape) {
-            stateManager_.setActiveState(STATE_TYPE::MenuState);
+
+    if (event.mouseButton.button == sf::Mouse::Right) {
+        if (isAwaitingChainContinuation_) {
+            return;
         }
+        clearSelection();
+        return;
     }
+
+    if (event.mouseButton.button != sf::Mouse::Left) {
+        return;
+    }
+
+    if (!isBoardInputAllowed()) {
+        return;
+    }
+
+    const Position boardPos = getPositionOnBoardFromMouse(event.mouseButton.x, event.mouseButton.y);
+    if (!isInsideBoard(boardPos)) {
+        return;
+    }
+    handleBoardClick(boardPos);
+}
+
+void PlayState::updateGameResultState()
+{
+    if (isGameOver_) {
+        return;
+    }
+
+    if (auto result = checkers_.getResult(); result.isOver) {
+        isGameOver_ = true;
+        winnerColor_ = result.winner;
+        resultClock_.restart();
+    }
+}
+
+Position PlayState::getLastPositionInChain(const Move& move) const
+{
+    const Move* last = &move;
+    while (last->nextMove) {
+        last = last->nextMove.get();
+    }
+    return last->to;
+}
+
+void PlayState::triggerComputerMoveIfNeeded()
+{
+    if (isGameOver_ || gameContext_.mode != MODE::COMPUTER || isHumanTurn() || moveState_.inProgress) {
+        return;
+    }
+
+    moveState_.resolvedPath = engine_->getBestMove();
+    moveState_.from = moveState_.resolvedPath.from;
+    moveState_.to = getLastPositionInChain(moveState_.resolvedPath);
+    moveState_.hasResolvedPath = true;
+    moveState_.animationProgress = 0.f;
+    moveState_.inProgress = true;
 }
 
 void PlayState::update()
 {
-    if (!isGameOver_) {
-        if (auto result = checkers_.getResult(); result.isOver) {
-            isGameOver_ = true;
-            winnerColor_ = result.winner;
-            clock.restart();
-        }
-    }
-    if (!isGameOver_) {
-        if (gameContext_.mode == MODE::COMPUTER && checkers_.getCurrentColour() != gameContext_.playerColour &&
-            !isMoveInProcess_) {
-            oneWayMove_ = engine_->getBestMove();
-            isMoveInProcess_ = true;
-            isUniqueWayToNewPosition_ = true;
-            lastSelectedPosition_ = oneWayMove_.from;
-            Move* ptr = &oneWayMove_;
-            while (ptr->nextMove) {
-                ptr = ptr->nextMove.get();
-            }
-            makeMoveTo_ = ptr->to;
-        }
-    }
+    updateGameResultState();
+    triggerComputerMoveIfNeeded();
 }
 
 void PlayState::drawBoard()
 {
-    for (int row = 0; row < copyBoard_.getWidth(); ++row) {
-        for (int col = 0; col < copyBoard_.getWidth(); ++col) {
+    for (int row = 0; row < boardView_.getWidth(); ++row) {
+        for (int col = 0; col < boardView_.getWidth(); ++col) {
             sf::RectangleShape& square = ((row + col) % 2 == 0 ? whiteSquare_ : blackSquare_);
             square.setPosition(col * tile_, row * tile_);
             window_.draw(square);
@@ -146,10 +347,107 @@ void PlayState::drawBoard()
     }
 }
 
+void PlayState::drawPiece(Position pos, bool isMoving)
+{
+    auto piece = boardView_(pos);
+    if (piece.isEmpty() || piece.isCaptured()) {
+        return;
+    }
+
+    sf::CircleShape& shape = (piece.getColour() == COLOUR::WHITE ? whitePieceCircle_ : blackPieceCircle_);
+    sf::Vector2f currentPos(pos.col * tile_ + offsetForPiece_, pos.row * tile_ + offsetForPiece_);
+
+    if (isMoving) {
+        const sf::Vector2f startPos(moveState_.from.col * tile_ + offsetForPiece_,
+                                    moveState_.from.row * tile_ + offsetForPiece_);
+        const sf::Vector2f endPos(moveState_.to.col * tile_ + offsetForPiece_, moveState_.to.row * tile_ + offsetForPiece_);
+
+        moveState_.animationProgress += kMoveAnimationStep;
+        const float t = std::min(moveState_.animationProgress, 1.0f);
+        currentPos = (endPos - startPos) * t + startPos;
+    }
+
+    shape.setPosition(currentPos);
+    window_.draw(shape);
+
+    if (piece.isQueen()) {
+        sf::Sprite sprite(resourceManager_.getQueenTexture());
+        sprite.setPosition(currentPos + sf::Vector2f(offsetForQueenTexture_, offsetForQueenTexture_));
+        window_.draw(sprite);
+    }
+}
+
+void PlayState::drawCapturedPiece(Position pos)
+{
+    capturedPieceCircle_.setPosition(pos.col * tile_ + offsetForPiece_, pos.row * tile_ + offsetForPiece_);
+    window_.draw(capturedPieceCircle_);
+}
+
+void PlayState::highlightPossibleMovesFrom(Position from)
+{
+    std::vector<Position> positionsToHighlight;
+    for (const auto& candidate : selection_.candidates) {
+        const Move* move = &candidate;
+        do {
+            if (move->from == from) {
+                // Highlight the whole continuation chain from the currently selected origin
+                const Move* continuation = move;
+                do {
+                    if (std::find(positionsToHighlight.begin(), positionsToHighlight.end(), continuation->to) ==
+                        positionsToHighlight.end()) {
+                        positionsToHighlight.push_back(continuation->to);
+                    }
+                    continuation = continuation->nextMove.get();
+                } while (continuation != nullptr);
+                break;
+            }
+            move = move->nextMove.get();
+        } while (move != nullptr);
+    }
+
+    for (const Position pos : positionsToHighlight) {
+        highlightCircle_.setPosition(pos.col * tile_ + offsetForHighlight_, pos.row * tile_ + offsetForHighlight_);
+        window_.draw(highlightCircle_);
+    }
+}
+
+void PlayState::drawHighlights()
+{
+    if (moveState_.inProgress && moveState_.hasResolvedPath) {
+        return;
+    }
+
+    if (selection_.candidates.empty() || !selection_.hasOrigin) {
+        return;
+    }
+
+    // Show all continuation destinations reachable from the currently selected square
+    highlightPossibleMovesFrom(selection_.origin);
+}
+
+void PlayState::drawPieces()
+{
+    for (int row = 0; row < boardView_.getWidth(); ++row) {
+        for (int col = (row % 2 ? 0 : 1); col < boardView_.getWidth(); col += 2) {
+            if (auto piece = boardView_(row, col); piece.isNotEmpty()) {
+                if (piece.isCaptured()) {
+                    drawCapturedPiece({row, col});
+                    continue;
+                }
+
+                const Position pos{row, col};
+                if (!moveState_.inProgress || !(moveState_.from == pos)) {
+                    drawPiece(pos);
+                }
+            }
+        }
+    }
+}
+
 void PlayState::renderResult()
 {
     sf::RectangleShape greyOverlay(sf::Vector2f{Game::WINDOW_WIDTH, Game::WINDOW_WIDTH});
-    greyOverlay.setFillColor(sf::Color{128, 128, 128, 190});  // Semi-transparent green
+    greyOverlay.setFillColor(sf::Color{128, 128, 128, 190});
     window_.draw(greyOverlay);
 
     sf::Sprite sprite;
@@ -159,12 +457,11 @@ void PlayState::renderResult()
     } else {
         sprite.setTexture(resourceManager_.getColourWinsTexture(winnerColor_));
     }
-    sf::Vector2f currentPosSprite = sf::Vector2f{(Game::WINDOW_WIDTH - sprite.getGlobalBounds().width) / 2, 150};
-
-    sprite.setPosition(currentPosSprite);
+    const sf::Vector2f spritePos{(Game::WINDOW_WIDTH - sprite.getGlobalBounds().width) / 2, 150};
+    sprite.setPosition(spritePos);
     window_.draw(sprite);
 
-    if (clock.getElapsedTime().asSeconds() > 2) {
+    if (resultClock_.getElapsedTime().asSeconds() > 2) {
         sf::Text message{"Press Esc to return to the menu", resourceManager_.getFont(), 16};
         message.setFillColor(sf::Color::White);
         message.setPosition((600 - message.getGlobalBounds().width) / 2,
@@ -173,144 +470,109 @@ void PlayState::renderResult()
     }
 }
 
+void PlayState::commitResolvedMoveIfNeeded()
+{
+    if (moveState_.inProgress || !moveState_.hasResolvedPath) {
+        return;
+    }
+
+    // Commit only once after animation finished
+    moveState_.hasResolvedPath = false;
+    checkers_.makeMove(moveState_.resolvedPath);
+    boardView_ = checkers_.getCopyBoard();
+    clearSelection();
+}
+
+void PlayState::processMoveAnimation()
+{
+    if (moveState_.inProgress) {
+        drawPiece(moveState_.from, true);
+    }
+
+    if (moveState_.animationProgress < 1.f) {
+        return;
+    }
+
+    moveState_.animationProgress = 0.f;
+    if (moveState_.hasResolvedPath) {
+        // Fully resolved move: animation ends and we can commit into Checkers
+        moveState_.inProgress = false;
+    } else {
+        // Ambiguous chained capture visualization: move one segment and wait for next click
+        const Position previousFrom = moveState_.from;
+        std::swap(boardView_(moveState_.to), boardView_(moveState_.from));
+        if (moveState_.segmentCapturedPiecePos.isValid()) {
+            boardView_(moveState_.segmentCapturedPiecePos).setCaptured();
+            moveState_.segmentCapturedPiecePos.reset();
+        }
+        selection_.origin = moveState_.to;
+        selection_.hasOrigin = true;
+        isAwaitingChainContinuation_ = true;
+
+        // If there is no continuation from the new origin, this segment closes the chain
+        if (!hasSegmentsFrom(selection_.origin) && !selection_.candidates.empty()) {
+            moveState_.resolvedPath = cloneMove(selection_.candidates.front());
+            moveState_.hasResolvedPath = true;
+            moveState_.inProgress = false;
+        }
+
+        moveState_.from = moveState_.to;
+        moveState_.to = previousFrom;
+        moveState_.inProgress = false;
+    }
+
+    commitResolvedMoveIfNeeded();
+}
+
 void PlayState::render()
 {
     drawBoard();
-
-    // draw pieces
-    for (int row = 0; row < copyBoard_.getWidth(); ++row) {
-        for (int col = (row % 2 ? 0 : 1); col < copyBoard_.getWidth(); col += 2) {
-            if (auto piece = copyBoard_(row, col); piece.isNotEmpty()) {
-                if (!isMoveInProcess_ || !(lastSelectedPosition_ == Position{row, col})) {
-                    drawPiece(Position{row, col});
-                }
-            }
-
-            if ((!isMoveInProcess_ || !isUniqueWayToNewPosition_) && !possibleMoves_.empty()) {
-                highlightPossibleMoves({row, col});
-            }
-        }
-    }
+    drawPieces();
+    drawHighlights();
 
     if (isGameOver_) {
         renderResult();
-    } else if (isMoveInProcess_) {
-        processMove();
+        return;
+    }
+
+    if (moveState_.inProgress) {
+        processMoveAnimation();
     }
 }
 
-void PlayState::processMove()
+void PlayState::initializeEngine()
 {
-    if (isMoveInProcess_) {
-        drawPiece(lastSelectedPosition_, true);
+    if (gameContext_.mode != MODE::COMPUTER) {
+        engine_.reset();
+        return;
     }
 
-    if (movePosition_ >= 1.f) {
-        movePosition_ = 0;
-        if (isUniqueWayToNewPosition_) {
-            isMoveInProcess_ = false;
-        } else {
-            std::swap(copyBoard_(makeMoveTo_), copyBoard_(lastSelectedPosition_));
-            lastSelectedPosition_ = makeMoveTo_;
-        }
-    }
-
-    if (!isMoveInProcess_ && isUniqueWayToNewPosition_) {
-        isUniqueWayToNewPosition_ = false;
-        checkers_.makeMove(oneWayMove_);
-        copyBoard_ = checkers_.getCopyBoard();
-        isSquareSelected_ = false;
-        possibleMoves_.clear();
-        render();  // FIXME: If we remove it, the beat process can freeze.
-                   // We should correct the engine (maybe return optional) because engine can freeze the gui
+    if (gameContext_.engineMode == ENGINE_MODE::NOVICE) {
+        engine_ = std::make_unique<RandomEngine>(checkers_);
+    } else {
+        engine_ = std::make_unique<MinimaxEngine>(checkers_, gameContext_.engineMode);
     }
 }
 
-void PlayState::highlightPossibleMoves(Position pos)
+int PlayState::getPieceRadiusOffset() const
 {
-    for (const auto& m : possibleMoves_) {
-        if (m.from.row == pos.row && m.from.col == pos.col) {
-            const Move* move = &m;
-            do {
-                highlightCircle_.setPosition(move->to.col * tile_ + offsetForHighlight_,
-                                             move->to.row * tile_ + offsetForHighlight_);
-                window_.draw(highlightCircle_);
-                move = move->nextMove.get();
-            } while (move);
-        }
-    }
-}
-
-void PlayState::drawPiece(Position pos, bool isMoving)
-{
-    auto piece = copyBoard_(pos);
-    sf::CircleShape& shape = (piece.getColour() == COLOUR::WHITE ? whitePieceCircle_ : blackPieceCircle_);
-    sf::Vector2f currentPos(pos.col * tile_ + offsetForPiece_, pos.row * tile_ + offsetForPiece_);
-
-    if (isMoving) {
-        sf::Vector2f startPos(lastSelectedPosition_.col * tile_ + offsetForPiece_,
-                              lastSelectedPosition_.row * tile_ + offsetForPiece_);
-        sf::Vector2f endPos(makeMoveTo_.col * tile_ + offsetForPiece_, makeMoveTo_.row * tile_ + offsetForPiece_);
-
-        movePosition_ += 0.05f;
-        float t = std::min(movePosition_, 1.0f);
-        currentPos = (endPos - startPos) * t + startPos;
-    }
-    shape.setPosition(currentPos);
-
-    window_.draw(shape);
-    if (piece.isQueen()) {
-        sf::Sprite sprite(resourceManager_.getQueenTexture());
-        sf::Vector2f currentPosSprite = currentPos + sf::Vector2f(offsetForQueenTexture_, offsetForQueenTexture_);
-
-        sprite.setPosition(currentPosSprite);
-        window_.draw(sprite);
-    }
-}
-
-void PlayState::reset()
-{
-    checkers_.setCheckersType(gameContext_.checkersType);
-    checkers_.reset();
-    copyBoard_ = checkers_.getCopyBoard();
-    lastSelectedPosition_.reset();
-    makeMoveTo_.reset();
-    isSquareSelected_ = false;
-    isMoveInProcess_ = false;
-    isUniqueWayToNewPosition_ = false;
-    isGameOver_ = false;
-    movePosition_ = 0.f;
-    oneWayMove_.reset();
-    possibleMoves_.clear();
-    currentMoveColor_ = COLOUR::WHITE;
-    if (gameContext_.mode == MODE::COMPUTER) {
-        if (gameContext_.engineMode == ENGINE_MODE::NOVICE) {
-            engine_ = std::make_unique<RandomEngine>(checkers_);
-        } else {
-            engine_ = std::make_unique<MinimaxEngine>(checkers_, gameContext_.engineMode);
-        }
-    }
-
-    // calculate default tiles, radiuses etc
-    tile_ = Game::WINDOW_WIDTH / copyBoard_.getWidth();
-    int offsetForRadius;
     switch (gameContext_.checkersType) {
         case CHECKERS_TYPE::BRAZILIAN:
         case CHECKERS_TYPE::RUSSIAN:
-            offsetForRadius = 22;
-            break;
-
+            return 22;
         case CHECKERS_TYPE::INTERNATIONAL:
-            offsetForRadius = 20;
-            break;
-
+            return 20;
         case CHECKERS_TYPE::CANADIAN:
-            offsetForRadius = 15;
-            break;
-
+            return 15;
         default:
             throw std::logic_error("Unknown CHECKERS_TYPE");
     }
+}
+
+void PlayState::initializeBoardMetrics()
+{
+    tile_ = Game::WINDOW_WIDTH / boardView_.getWidth();
+    const int offsetForRadius = getPieceRadiusOffset();
 
     pieceRadius_ = (tile_ - offsetForRadius) / 2.0f;
     offsetForPiece_ = (tile_ - 2 * pieceRadius_) / 2.0f;
@@ -320,8 +582,25 @@ void PlayState::reset()
     assert(offsetForQueenTexture_ > 0);
 
     highlightCircle_.setRadius(highlightRadius_);
+    capturedPieceCircle_.setRadius(pieceRadius_);
     whitePieceCircle_.setRadius(pieceRadius_);
     blackPieceCircle_.setRadius(pieceRadius_);
     whiteSquare_.setSize(sf::Vector2f(tile_, tile_));
     blackSquare_.setSize(sf::Vector2f(tile_, tile_));
+}
+
+void PlayState::reset()
+{
+    checkers_.setCheckersType(gameContext_.checkersType);
+    checkers_.reset();
+    boardView_ = checkers_.getCopyBoard();
+
+    clearSelection();
+    moveState_.clear();
+    isAwaitingChainContinuation_ = false;
+    isGameOver_ = false;
+    winnerColor_ = COLOUR::WHITE;
+
+    initializeEngine();
+    initializeBoardMetrics();
 }
