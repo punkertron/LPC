@@ -78,7 +78,7 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Checkers& curBoard, bo
         return evaluatePosition(curBoard.getBoard());
     }
 
-    auto moves = curBoard.getValidMoves();
+    const auto& moves = curBoard.getValidMoves();
     if (moves.empty()) {
         return evaluatePosition(curBoard.getBoard());
     }
@@ -118,9 +118,9 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Checkers& curBoard, bo
 Move MinimaxEngine::getBestMove()
 {
     // Doesn't do anything if there is only one possible move
-    auto moves = checkers_.getValidMoves();
+    const auto& moves = checkers_.getValidMoves();
     if (moves.size() == 1 && (*moves.begin()).second.size() == 1) {
-        return moves.begin()->second[0];
+        return cloneMove(moves.begin()->second[0]);
     }
 
     // Determine if the current player is maximizing or minimizing
@@ -150,13 +150,13 @@ Move MinimaxEngine::getBestMove()
             if (isMaximizingPlayer) {
                 if (currentScore > bestScore) {
                     bestScore = currentScore;
-                    bestMove = move;
+                    bestMove = cloneMove(move);
                 }
                 alpha = std::max(alpha, bestScore);
             } else {
                 if (currentScore < bestScore) {
                     bestScore = currentScore;
-                    bestMove = move;
+                    bestMove = cloneMove(move);
                 }
                 beta = std::min(beta, bestScore);
             }

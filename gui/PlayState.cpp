@@ -58,7 +58,7 @@ bool PlayState::isOneWayTo(Position to)
         const Move* move = &m;
         do {
             if (move->to == to) {
-                oneWayMove_ = m;
+                oneWayMove_ = cloneMove(m);
                 ++cnt;
             }
             move = move->nextMove.get();

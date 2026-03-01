@@ -91,7 +91,12 @@ void Checkers::setCheckersType(CHECKERS_TYPE ct)
 std::vector<Move> Checkers::getValidMoves(const Position& p) const
 {
     if (auto it = validMoves_.find(p); it != validMoves_.end()) {
-        return it->second;
+        std::vector<Move> clonedMoves;
+        clonedMoves.reserve(it->second.size());
+        for (const auto& move : it->second) {
+            clonedMoves.push_back(cloneMove(move));
+        }
+        return clonedMoves;
     }
     return {};
 }
@@ -247,7 +252,7 @@ void Checkers::addBeatMoves(const Position& p, std::vector<Move>& res) const
     std::vector<Move> moves;
     auto boardCopy = board_;
     findCaptures(p, boardCopy, moves);
-    res.insert(res.end(), moves.begin(), moves.end());
+    res.insert(res.end(), std::make_move_iterator(moves.begin()), std::make_move_iterator(moves.end()));
 }
 
 static constexpr std::vector<std::pair<int, int>> getMoveDirections()
@@ -338,12 +343,12 @@ void Checkers::processCapture(const Position& initial, const Position& enemy, co
     if (!furtherMoves.empty()) {
         // For each further move, create a separate chain
         for (const auto& fm : furtherMoves) {
-            newMove.nextMove = std::make_shared<Move>(fm);
-            moves.push_back(newMove);
+            newMove.nextMove = cloneMovePtr(fm);
+            moves.push_back(cloneMove(newMove));
         }
     } else {
         // No further captures, add the current move
-        moves.push_back(newMove);
+        moves.push_back(std::move(newMove));
     };
 }
 
