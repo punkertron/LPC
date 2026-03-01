@@ -14,13 +14,14 @@ Checkers::Checkers()
     board_.reset();
 }
 
-Checkers::Checkers(const Checkers& other) : board_{other.board_}, currentColour_{other.getCurrentColour()}
+Checkers::Checkers(const Checkers& other) :
+    board_{other.board_}, currentColour_{other.getCurrentColour()}, checkersType_{other.checkersType_}
 {
 }
 
 void Checkers::reset()
 {
-    // reset everyting
+    // reset everything
     currentColour_ = COLOUR::WHITE;
     // board_.reset();
 

@@ -24,7 +24,7 @@ private:
     Board board_;
     std::unordered_map<Position, std::vector<Move>> validMoves_;
     COLOUR currentColour_;
-    CHECKERS_TYPE checkersType_;
+    CHECKERS_TYPE checkersType_ = CHECKERS_TYPE::RUSSIAN;
 
     bool isWithinBoard(const Position& p) const;
     void generateValidMoves();
