@@ -17,7 +17,7 @@ bool Piece::isNotEmpty() const
 
 COLOUR Piece::getColour() const
 {
-    assert(pt_ != PIECE_TYPE::EMPTY || pt_ != PIECE_TYPE::CAPTURED);
+    assert(pt_ != PIECE_TYPE::EMPTY && pt_ != PIECE_TYPE::CAPTURED);
     switch (pt_) {
         case PIECE_TYPE::WHITE_REGULAR:
             return COLOUR::WHITE;
