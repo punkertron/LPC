@@ -40,7 +40,17 @@ PlayState::PlayState(sf::RenderWindow& window, StateManager& stateManager, Resou
 
 Position PlayState::getPositionOnBoardFromMouse(int x, int y) const
 {
-    return {y / tile_, x / tile_};
+    return mapPos({y / tile_, x / tile_});
+}
+
+Position PlayState::mapPos(Position pos) const
+{
+    if (!isBoardFlipped_) {
+        return pos;
+    }
+
+    const int boardWidth = boardView_.getWidth();
+    return {boardWidth - pos.row - 1, boardWidth - pos.col - 1};
 }
 
 bool PlayState::isInsideBoard(Position pos) const
@@ -355,12 +365,14 @@ void PlayState::drawPiece(Position pos, bool isMoving)
     }
 
     sf::CircleShape& shape = (piece.getColour() == COLOUR::WHITE ? whitePieceCircle_ : blackPieceCircle_);
-    sf::Vector2f currentPos(pos.col * tile_ + offsetForPiece_, pos.row * tile_ + offsetForPiece_);
+    const Position displayPos = mapPos(pos);
+    sf::Vector2f currentPos(displayPos.col * tile_ + offsetForPiece_, displayPos.row * tile_ + offsetForPiece_);
 
     if (isMoving) {
-        const sf::Vector2f startPos(moveState_.from.col * tile_ + offsetForPiece_,
-                                    moveState_.from.row * tile_ + offsetForPiece_);
-        const sf::Vector2f endPos(moveState_.to.col * tile_ + offsetForPiece_, moveState_.to.row * tile_ + offsetForPiece_);
+        const Position displayFrom = mapPos(moveState_.from);
+        const Position displayTo = mapPos(moveState_.to);
+        const sf::Vector2f startPos(displayFrom.col * tile_ + offsetForPiece_, displayFrom.row * tile_ + offsetForPiece_);
+        const sf::Vector2f endPos(displayTo.col * tile_ + offsetForPiece_, displayTo.row * tile_ + offsetForPiece_);
 
         moveState_.animationProgress += kMoveAnimationStep;
         const float t = std::min(moveState_.animationProgress, 1.0f);
@@ -379,7 +391,8 @@ void PlayState::drawPiece(Position pos, bool isMoving)
 
 void PlayState::drawCapturedPiece(Position pos)
 {
-    capturedPieceCircle_.setPosition(pos.col * tile_ + offsetForPiece_, pos.row * tile_ + offsetForPiece_);
+    const Position displayPos = mapPos(pos);
+    capturedPieceCircle_.setPosition(displayPos.col * tile_ + offsetForPiece_, displayPos.row * tile_ + offsetForPiece_);
     window_.draw(capturedPieceCircle_);
 }
 
@@ -406,7 +419,9 @@ void PlayState::highlightPossibleMovesFrom(Position from)
     }
 
     for (const Position pos : positionsToHighlight) {
-        highlightCircle_.setPosition(pos.col * tile_ + offsetForHighlight_, pos.row * tile_ + offsetForHighlight_);
+        const Position displayPos = mapPos(pos);
+        highlightCircle_.setPosition(displayPos.col * tile_ + offsetForHighlight_,
+                                     displayPos.row * tile_ + offsetForHighlight_);
         window_.draw(highlightCircle_);
     }
 }
@@ -594,6 +609,7 @@ void PlayState::reset()
     checkers_.setCheckersType(gameContext_.checkersType);
     checkers_.reset();
     boardView_ = checkers_.getCopyBoard();
+    isBoardFlipped_ = gameContext_.mode == MODE::COMPUTER && gameContext_.playerColour == COLOUR::BLACK;
 
     clearSelection();
     moveState_.clear();

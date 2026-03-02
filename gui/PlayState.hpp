@@ -111,7 +111,11 @@ private:
     float highlightRadius_;
     float offsetForHighlight_;
     float offsetForQueenTexture_;
+    // True when board should be shown rotated 180 degrees for the current player (playing black against computer)
+    bool isBoardFlipped_{false};
 
+    // Convert position between logical/display spaces (same transform for 180-degree flip)
+    Position mapPos(Position pos) const;
     // Convert mouse pixel coordinates into board row/col
     Position getPositionOnBoardFromMouse(int x, int y) const;
     // Check whether a board position lies inside the current board dimensions
