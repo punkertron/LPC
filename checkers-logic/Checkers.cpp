@@ -1,6 +1,7 @@
 #include "Checkers.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <memory>
 #include <stdexcept>
@@ -9,9 +10,23 @@
 #include "Board.hpp"
 #include "Piece.hpp"
 
+namespace
+{
+size_t darkSquaresCountFor(const Board& board)
+{
+    const int width = board.getWidth();
+    return static_cast<size_t>((width * width) / 2);
+}
+
+constexpr std::array<std::pair<int, int>, 4> kMoveDirections{
+    {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
+};
+}  // namespace
+
 Checkers::Checkers()
 {
     board_.reset();
+    validMoves_.reserve(darkSquaresCountFor(board_));
 }
 
 Checkers::Checkers(const Checkers& other) :
@@ -51,6 +66,8 @@ void Checkers::reset()
             throw std::logic_error("Unknown CHECKERS_TYPE in Checkers::reset()");
     }
 
+    validMoves_.reserve(darkSquaresCountFor(board_));
+
     for (int i = 0; i < lastRowBlack; ++i) {
         for (int j = (i % 2 ? 0 : 1); j < board_.getWidth(); j += 2) {
             board_(i, j).setBlackRegular();
@@ -87,6 +104,8 @@ void Checkers::setCheckersType(CHECKERS_TYPE ct)
         default:
             throw std::logic_error("Unknown CHECKERS_TYPE");
     }
+
+    validMoves_.reserve(darkSquaresCountFor(board_));
 }
 
 std::vector<Move> Checkers::getValidMoves(const Position& p) const
@@ -212,24 +231,30 @@ static inline void removeNonMaxBeatMoves(std::unordered_map<Position, std::vecto
 void Checkers::generateValidMoves()
 {
     validMoves_.clear();
+    const int width = board_.getWidth();
+    const int darkSquaresCount = (width * width) / 2;
 
-    auto processMoves = [&](auto addMovesFunc) {
-        for (int i = 0; i < board_.getWidth(); ++i) {
-            for (int j = (i % 2 ? 0 : 1); j < board_.getWidth(); j += 2) {
-                if (auto piece = board_(i, j); piece.isNotEmpty() && piece.getColour() == currentColour_) {
-                    std::vector<Move> moves;
-                    addMovesFunc({i, j}, moves);
-                    if (!moves.empty()) {
-                        validMoves_.emplace(Position{i, j}, std::move(moves));
-                    }
-                }
+    std::vector<Position> playerPieces;
+    playerPieces.reserve(static_cast<size_t>(darkSquaresCount));
+
+    for (int i = 0; i < width; ++i) {
+        for (int j = (i % 2 ? 0 : 1); j < width; j += 2) {
+            Piece& piece = board_(i, j);
+            if (piece.isEmpty() || piece.getColour() != currentColour_) {
+                continue;
+            }
+
+            Position pos{i, j};
+            playerPieces.push_back(pos);
+
+            std::vector<Move> moves;
+            addBeatMoves(pos, moves);
+            if (!moves.empty()) {
+                validMoves_.emplace(pos, std::move(moves));
             }
         }
-    };
+    }
 
-    processMoves([this](const Position& pos, std::vector<Move>& moves) {
-        addBeatMoves(pos, moves);
-    });
     // Save only moves with the most amount of captured pieces for INTERNATIONAL, CANADIAN and BRAZILIAN
     if (validMoves_.size() > 0 && checkersType_ != CHECKERS_TYPE::RUSSIAN) {
         removeNonMaxBeatMoves(validMoves_);
@@ -238,9 +263,13 @@ void Checkers::generateValidMoves()
     // user must beat if there is such possibility.
     // so generate moves without captures only if there is no beat moves
     if (validMoves_.empty()) {
-        processMoves([this](const Position& pos, std::vector<Move>& moves) {
+        for (const Position& pos : playerPieces) {
+            std::vector<Move> moves;
             addNonBeatMoves(pos, moves);
-        });
+            if (!moves.empty()) {
+                validMoves_.emplace(pos, std::move(moves));
+            }
+        }
     }
 }
 
@@ -250,28 +279,15 @@ void Checkers::addBeatMoves(const Position& p, std::vector<Move>& res) const
         return;
     }
 
-    std::vector<Move> moves;
     auto boardCopy = board_;
-    findCaptures(p, boardCopy, moves);
-    res.insert(res.end(), std::make_move_iterator(moves.begin()), std::make_move_iterator(moves.end()));
-}
-
-static constexpr std::vector<std::pair<int, int>> getMoveDirections()
-{
-    return {
-        {-1, -1},
-        {-1, 1 },
-        {1,  -1},
-        {1,  1 }
-    };
+    findCaptures(p, boardCopy, res);
 }
 
 void Checkers::findCaptures(const Position& initial, Board& boardCopy, std::vector<Move>& moves) const
 {
     auto piece = boardCopy(initial);
-    auto directions = getMoveDirections();
 
-    for (const auto& [dr, dc] : directions) {
+    for (const auto& [dr, dc] : kMoveDirections) {
         int enemyRow = initial.row + dr;
         int enemyCol = initial.col + dc;
 
@@ -417,8 +433,7 @@ void Checkers::addOneStepMoves(const Position& p, std::vector<Move>& res) const
 
 void Checkers::addQueenNonBeatMoves(const Position& p, std::vector<Move>& res) const
 {
-    auto directions = getMoveDirections();
-    for (const auto& [dr, dc] : directions) {
+    for (const auto& [dr, dc] : kMoveDirections) {
         for (int nextRow = p.row + dr, nextCol = p.col + dc; isWithinBoard({nextRow, nextCol});
              nextRow += dr, nextCol += dc) {
             if (board_(nextRow, nextCol).isNotEmpty()) {
