@@ -142,7 +142,7 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
     - Introduce network play for remote two-player matches.
 
 4. **UI Enhancements**
-    - Turn the board around if playing for black against the computer.
+    - ~~Turn the board around if playing for black against the computer.~~ Done! 🎊
     - Animate piece captures more smoothly.
     - Add sounds and a game timer.
 
