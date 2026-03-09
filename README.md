@@ -24,6 +24,7 @@ The following checkers variants are supported:
   - SFML-based user interface with clickable squares.  
   - Menu system to select either two-player or computer-vs-human mode, as well as difficulty/AI level.  
   - Visual highlights for valid moves, chain captures, and game result screens.  
+  - Undo/Redo support (`Ctrl+Z` / `Cmd+Z`, `Ctrl+Y` / `Cmd+Shift+Z`).  
 
 - **State Machine**  
   - Easily extendable system to manage game states (Menu, Play, etc.).  
@@ -126,17 +127,18 @@ mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 4. (Computer mode only) Choose Your Colour — play as White or Black.
 5. (Computer mode only) Select Difficulty — choose from `Novice`, `Easy`, `Medium`, `Hard`, or `Grandmaster`.
 6. Enjoy playing — click the squares to select a piece and move it. Possible moves are highlighted automatically.
-7. Press `ESC` anytime to return to the main menu.
+7. Use `Ctrl+Z` (`Cmd+Z` on macOS) to undo, and `Ctrl+Y` (or `Ctrl+Shift+Z` / `Cmd+Shift+Z`) to redo.
+8. Press `ESC` anytime to return to the main menu.
 
 ---
 
 ## TODO
-1. **Implement Undo / Redo**
-    - Track and revert moves for convenience.
+1. ~~**Implement Undo / Redo**~~ Done!
+    - ~~Track and revert moves for convenience.~~
 
 2. **Improve AI**
     - Implement a transposition table or caching.
-    - Add multhithreading (`Grandmaster` mode can be faster).
+    - Add multithreading (`Grandmaster` mode can be faster).
 
 3. **Online Multiplayer**
     - Introduce network play for remote two-player matches.
