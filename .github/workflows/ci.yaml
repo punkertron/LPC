@@ -1,0 +1,107 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            ninja-build \
+            libx11-dev \
+            libxrandr-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libudev-dev \
+            libgl1-mesa-dev \
+            libfreetype-dev \
+            libopenal-dev \
+            libflac-dev \
+            libvorbis-dev
+
+      - name: Bootstrap vcpkg (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git "${{ github.workspace }}/vcpkg"
+          "${{ github.workspace }}/vcpkg/bootstrap-vcpkg.sh" -disableMetrics
+
+      - name: Bootstrap vcpkg (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git "$env:GITHUB_WORKSPACE/vcpkg"
+          & "$env:GITHUB_WORKSPACE/vcpkg/bootstrap-vcpkg.bat" -disableMetrics
+
+      - name: Set vcpkg triplet (Linux)
+        if: runner.os == 'Linux'
+        run: echo "VCPKG_TRIPLET=x64-linux" >> "$GITHUB_ENV"
+
+      - name: Set vcpkg triplet (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: '"VCPKG_TRIPLET=x64-windows" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append'
+
+      - name: Set vcpkg triplet (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          if [ "$(uname -m)" = "arm64" ]; then
+            echo "VCPKG_TRIPLET=arm64-osx" >> "$GITHUB_ENV"
+          else
+            echo "VCPKG_TRIPLET=x64-osx" >> "$GITHUB_ENV"
+          fi
+
+      - name: Install SFML 3 (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: |
+          "${{ github.workspace }}/vcpkg/vcpkg" install "sfml:${VCPKG_TRIPLET}"
+
+      - name: Install SFML 3 (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          & "$env:GITHUB_WORKSPACE/vcpkg/vcpkg.exe" install "sfml:$env:VCPKG_TRIPLET"
+
+      - name: Configure (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: >
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake
+          -DVCPKG_TARGET_TRIPLET=${VCPKG_TRIPLET}
+
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: >
+          cmake -S . -B build -A x64
+          -DCMAKE_TOOLCHAIN_FILE="$env:GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake"
+          -DVCPKG_TARGET_TRIPLET="$env:VCPKG_TRIPLET"
+
+      - name: Build (Linux/macOS)
+        if: runner.os != 'Windows'
+        run: cmake --build build --parallel
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cmake --build build --config Release --parallel
