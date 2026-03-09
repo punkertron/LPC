@@ -1,18 +1,20 @@
 #include "Game.hpp"
 
 #include <memory>
+#include <optional>
 
 #include "MenuState.hpp"
 #include "PlayState.hpp"
 #include "State.hpp"
 
 Game::Game() :
-    window_{sf::VideoMode(WINDOW_WIDTH, WINDOW_WIDTH), "LPC - Let's Play Checkers!!", sf::Style::Titlebar | sf::Style::Close}
+    window_{sf::VideoMode({WINDOW_WIDTH, WINDOW_WIDTH}), "LPC - Let's Play Checkers!!",
+            sf::Style::Titlebar | sf::Style::Close}
 {
     // Calculate the position to the center of Desktop
     sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
-    auto screenWidth = desktopMode.width;
-    auto screenHeight = desktopMode.height;
+    auto screenWidth = desktopMode.size.x;
+    auto screenHeight = desktopMode.size.y;
     auto windowPosX = (screenWidth - WINDOW_WIDTH) / 2;
     auto windowPosY = (screenHeight - WINDOW_WIDTH) / 2;
     if (screenWidth > WINDOW_WIDTH && screenHeight > WINDOW_WIDTH) {
@@ -40,12 +42,11 @@ void Game::run()
 
 void Game::processEvents()
 {
-    sf::Event event;
-    while (window_.pollEvent(event)) {
-        if (event.type == sf::Event::Closed) {
+    while (const auto event = window_.pollEvent()) {
+        if (event->is<sf::Event::Closed>()) {
             window_.close();
         }
-        stateManager_.handleEvent(event);
+        stateManager_.handleEvent(*event);
     }
 }
 

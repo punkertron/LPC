@@ -45,11 +45,21 @@ static std::filesystem::path getExecutablePath()
     return std::filesystem::path(buffer).parent_path();
 }
 
+static bool loadFromPath(sf::Texture& resource, const std::filesystem::path& resourcePath)
+{
+    return resource.loadFromFile(resourcePath);
+}
+
+static bool loadFromPath(sf::Font& resource, const std::filesystem::path& resourcePath)
+{
+    return resource.openFromFile(resourcePath);
+}
+
 template <typename Resource>
 static inline void loadResource(Resource& resource, const std::filesystem::path& resourceDir, std::string_view fileName)
 {
-    auto texturePath = resourceDir / fileName;
-    if (!resource.loadFromFile(texturePath.string())) {
+    const auto resourcePath = resourceDir / fileName;
+    if (!loadFromPath(resource, resourcePath)) {
         throw std::runtime_error(std::string("Unable to load resource: ") + std::string(fileName));
     }
 }

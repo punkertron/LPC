@@ -2,18 +2,17 @@
 
 Button::Button(sf::RenderWindow& window, int rowPos, const sf::Font& font, const char* text, const sf::Color& buttonColor,
                const sf::Color& textColor) :
-    window_{window}
+    window_{window}, text_{font, text}
 {
-    text_.setFont(font);
-    text_.setString(text);
     text_.setFillColor(textColor);
 
-    auto floatRect = text_.getGlobalBounds();
-    text_.setPosition((600 - floatRect.width) / 2, rowPos);
+    const auto floatRect = text_.getGlobalBounds();
+    text_.setPosition({(600.f - floatRect.size.x) / 2.f, static_cast<float>(rowPos)});
 
     const int delta = 10;
-    shape_.setPosition((600 - text_.getGlobalBounds().width) / 2 - delta, rowPos - delta);
-    shape_.setSize({floatRect.width + floatRect.left + 2 * delta, floatRect.height + floatRect.top + 2 * delta});
+    shape_.setPosition({(600.f - text_.getGlobalBounds().size.x) / 2.f - delta, static_cast<float>(rowPos - delta)});
+    shape_.setSize(
+        {floatRect.size.x + floatRect.position.x + 2.f * delta, floatRect.size.y + floatRect.position.y + 2.f * delta});
     shape_.setFillColor(buttonColor);
 }
 
@@ -30,9 +29,9 @@ void Button::setCallback(std::function<void()> func)
 
 void Button::handleEvent(const sf::Event& event)
 {
-    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-        if (isMouseOver()) {
-            // if (callback_)
+    if (const auto* mousePressed = event.getIf<sf::Event::MouseButtonPressed>();
+        mousePressed != nullptr && mousePressed->button == sf::Mouse::Button::Left) {
+        if (isMouseOver() && callback_) {
             callback_();
         }
     }

@@ -16,7 +16,7 @@ namespace
 {
 constexpr float kMoveAnimationStep = 0.05f;
 
-bool hasPrimaryShortcutModifier(const sf::Event::KeyEvent& key)
+bool hasPrimaryShortcutModifier(const sf::Event::KeyPressed& key)
 {
 #ifdef __APPLE__
     return key.system || key.control;
@@ -25,14 +25,15 @@ bool hasPrimaryShortcutModifier(const sf::Event::KeyEvent& key)
 #endif
 }
 
-bool isUndoShortcut(const sf::Event::KeyEvent& key)
+bool isUndoShortcut(const sf::Event::KeyPressed& key)
 {
-    return hasPrimaryShortcutModifier(key) && !key.shift && key.code == sf::Keyboard::Z;
+    return hasPrimaryShortcutModifier(key) && !key.shift && key.code == sf::Keyboard::Key::Z;
 }
 
-bool isRedoShortcut(const sf::Event::KeyEvent& key)
+bool isRedoShortcut(const sf::Event::KeyPressed& key)
 {
-    return hasPrimaryShortcutModifier(key) && (key.code == sf::Keyboard::Y || (key.shift && key.code == sf::Keyboard::Z));
+    return hasPrimaryShortcutModifier(key) &&
+           (key.code == sf::Keyboard::Key::Y || (key.shift && key.code == sf::Keyboard::Key::Z));
 }
 }  // namespace
 
@@ -291,26 +292,27 @@ void PlayState::handleBoardClick(Position pos)
 
 void PlayState::handleEvent(const sf::Event& event)
 {
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Escape) {
+    if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>(); keyPressed != nullptr) {
+        if (keyPressed->code == sf::Keyboard::Key::Escape) {
             stateManager_.setActiveState(STATE_TYPE::MenuState);
             return;
         }
-        if (isUndoShortcut(event.key)) {
+        if (isUndoShortcut(*keyPressed)) {
             undoMove();
             return;
         }
-        if (isRedoShortcut(event.key)) {
+        if (isRedoShortcut(*keyPressed)) {
             redoMove();
             return;
         }
     }
 
-    if (event.type != sf::Event::MouseButtonPressed) {
+    const auto* mousePressed = event.getIf<sf::Event::MouseButtonPressed>();
+    if (mousePressed == nullptr) {
         return;
     }
 
-    if (event.mouseButton.button == sf::Mouse::Right) {
+    if (mousePressed->button == sf::Mouse::Button::Right) {
         if (isAwaitingChainContinuation_) {
             return;
         }
@@ -318,7 +320,7 @@ void PlayState::handleEvent(const sf::Event& event)
         return;
     }
 
-    if (event.mouseButton.button != sf::Mouse::Left) {
+    if (mousePressed->button != sf::Mouse::Button::Left) {
         return;
     }
 
@@ -326,7 +328,7 @@ void PlayState::handleEvent(const sf::Event& event)
         return;
     }
 
-    const Position boardPos = getPositionOnBoardFromMouse(event.mouseButton.x, event.mouseButton.y);
+    const Position boardPos = getPositionOnBoardFromMouse(mousePressed->position.x, mousePressed->position.y);
     if (!isInsideBoard(boardPos)) {
         return;
     }
@@ -454,7 +456,7 @@ void PlayState::drawBoard()
     for (int row = 0; row < boardView_.getWidth(); ++row) {
         for (int col = 0; col < boardView_.getWidth(); ++col) {
             sf::RectangleShape& square = ((row + col) % 2 == 0 ? whiteSquare_ : blackSquare_);
-            square.setPosition(col * tile_, row * tile_);
+            square.setPosition({static_cast<float>(col * tile_), static_cast<float>(row * tile_)});
             window_.draw(square);
         }
     }
@@ -495,7 +497,7 @@ void PlayState::drawPiece(Position pos, bool isMoving)
 void PlayState::drawCapturedPiece(Position pos)
 {
     const Position displayPos = mapPos(pos);
-    capturedPieceCircle_.setPosition(displayPos.col * tile_ + offsetForPiece_, displayPos.row * tile_ + offsetForPiece_);
+    capturedPieceCircle_.setPosition({displayPos.col * tile_ + offsetForPiece_, displayPos.row * tile_ + offsetForPiece_});
     window_.draw(capturedPieceCircle_);
 }
 
@@ -523,8 +525,8 @@ void PlayState::highlightPossibleMovesFrom(Position from)
 
     for (const Position pos : positionsToHighlight) {
         const Position displayPos = mapPos(pos);
-        highlightCircle_.setPosition(displayPos.col * tile_ + offsetForHighlight_,
-                                     displayPos.row * tile_ + offsetForHighlight_);
+        highlightCircle_.setPosition(
+            {displayPos.col * tile_ + offsetForHighlight_, displayPos.row * tile_ + offsetForHighlight_});
         window_.draw(highlightCircle_);
     }
 }
@@ -568,22 +570,22 @@ void PlayState::renderResult()
     greyOverlay.setFillColor(sf::Color{128, 128, 128, 190});
     window_.draw(greyOverlay);
 
-    sf::Sprite sprite;
-    if (gameContext_.mode == MODE::COMPUTER) {
-        sprite.setTexture((winnerColor_ == gameContext_.playerColour ? resourceManager_.getYouWinTexture()
-                                                                     : resourceManager_.getYouLostTexture()));
-    } else {
-        sprite.setTexture(resourceManager_.getColourWinsTexture(winnerColor_));
-    }
-    const sf::Vector2f spritePos{(Game::WINDOW_WIDTH - sprite.getGlobalBounds().width) / 2, 150};
+    const sf::Texture& resultTexture =
+        (gameContext_.mode == MODE::COMPUTER)
+            ? (winnerColor_ == gameContext_.playerColour ? resourceManager_.getYouWinTexture()
+                                                         : resourceManager_.getYouLostTexture())
+            : resourceManager_.getColourWinsTexture(winnerColor_);
+    sf::Sprite sprite{resultTexture};
+
+    const sf::Vector2f spritePos{(Game::WINDOW_WIDTH - sprite.getGlobalBounds().size.x) / 2.f, 150.f};
     sprite.setPosition(spritePos);
     window_.draw(sprite);
 
     if (resultClock_.getElapsedTime().asSeconds() > 2) {
-        sf::Text message{"Press Esc to return to the menu", resourceManager_.getFont(), 16};
+        sf::Text message{resourceManager_.getFont(), "Press Esc to return to the menu", 16};
         message.setFillColor(sf::Color::White);
-        message.setPosition((600 - message.getGlobalBounds().width) / 2,
-                            sprite.getGlobalBounds().height + sprite.getPosition().y + 20);
+        message.setPosition({(600.f - message.getGlobalBounds().size.x) / 2.f,
+                             sprite.getGlobalBounds().size.y + sprite.getPosition().y + 20.f});
         window_.draw(message);
     }
 }

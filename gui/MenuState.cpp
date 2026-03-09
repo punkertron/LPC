@@ -130,8 +130,8 @@ void MenuState::handleEvent(const sf::Event& event)
             }
         }
     }
-    if (event.type == sf::Event::KeyPressed) {
-        if (event.key.code == sf::Keyboard::Escape) {
+    if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>(); keyPressed != nullptr) {
+        if (keyPressed->code == sf::Keyboard::Key::Escape) {
             stateManager_.setActiveState(STATE_TYPE::MenuState);
         }
     }
@@ -152,9 +152,9 @@ void MenuState::update()
 
 void MenuState::render()
 {
-    sf::Text text("Let's Play\n\n Checkers!!", resourceManager_.getFont(), 36);
+    sf::Text text{resourceManager_.getFont(), "Let's Play\n\n Checkers!!", 36};
     text.setFillColor(sf::Color::White);
-    text.setPosition((600 - text.getGlobalBounds().width) / 2, 50);
+    text.setPosition({(600.f - text.getGlobalBounds().size.x) / 2.f, 50.f});
     window_.draw(text);
 
     if (!gameContext_.isCheckersTypeSelected) {

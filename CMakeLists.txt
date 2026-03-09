@@ -6,13 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra -Wpedantic)
 
-# Prefer SFML package config (Homebrew/vcpkg/etc.) and fall back to CMake's FindSFML module.
+# Prefer SFML package config (Homebrew/vcpkg/etc.).
 if(APPLE AND NOT DEFINED SFML_DIR)
     set(_sfml_prefix_candidates
         /opt/homebrew/opt/sfml
-        /opt/homebrew/opt/sfml@2
+        /opt/homebrew/opt/sfml@3
         /usr/local/opt/sfml
-        /usr/local/opt/sfml@2
+        /usr/local/opt/sfml@3
     )
 
     foreach(_prefix IN LISTS _sfml_prefix_candidates)
@@ -22,10 +22,7 @@ if(APPLE AND NOT DEFINED SFML_DIR)
     endforeach()
 endif()
 
-find_package(SFML 2.5 CONFIG QUIET COMPONENTS Graphics Window System)
-if(NOT SFML_FOUND)
-    find_package(SFML 2.5 REQUIRED COMPONENTS graphics window system)
-endif()
+find_package(SFML 3 CONFIG REQUIRED COMPONENTS Graphics Window System)
 
 add_subdirectory(checkers-logic)
 add_subdirectory(engine)

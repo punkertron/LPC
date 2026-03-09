@@ -108,7 +108,8 @@ This project is split into three main parts:
 ## Getting Started
 
 1. **Clone the Repository**
-2. **Build** (Developed on Debian 12)<br/>Make sure you have a C++20 compiler and CMake ≥ 3.25.1 installed, plus SFML (version ≥ 2.5).
+2. **Build** (Developed on Debian 12)<br/>Make sure you have a C++20 compiler and CMake ≥ 3.25.1 installed, plus SFML (version ≥ 3.0).  
+   On Linux with the X11 backend, also install `libxi-dev` (required by SFML 3 for raw mouse input).
 ```bash
 mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
 ```
