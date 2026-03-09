@@ -165,6 +165,12 @@ private:
 
     // Read game result from logic and update UI state
     void updateGameResultState();
+    // Sync rendering state with authoritative Checkers state after history navigation
+    void synchronizeBoardFromLogic();
+    // Handle undo shortcut
+    void undoMove();
+    // Handle redo shortcut
+    void redoMove();
     // Ask engine for move when it's computer's turn
     void triggerComputerMoveIfNeeded();
     // Build/reset engine implementation based on selected mode/difficulty

@@ -21,6 +21,8 @@ size_t darkSquaresCountFor(const Board& board)
 constexpr std::array<std::pair<int, int>, 4> kMoveDirections{
     {{-1, -1}, {-1, 1}, {1, -1}, {1, 1}}
 };
+
+constexpr size_t kMaxHistorySize = 256;
 }  // namespace
 
 Checkers::Checkers()
@@ -81,6 +83,8 @@ void Checkers::reset()
     }
 
     generateValidMoves();
+    undoHistory_.clear();
+    redoHistory_.clear();
 }
 
 void Checkers::setCheckersType(CHECKERS_TYPE ct)
@@ -106,6 +110,8 @@ void Checkers::setCheckersType(CHECKERS_TYPE ct)
     }
 
     validMoves_.reserve(darkSquaresCountFor(board_));
+    undoHistory_.clear();
+    redoHistory_.clear();
 }
 
 std::vector<Move> Checkers::getValidMoves(const Position& p) const
@@ -128,7 +134,67 @@ const std::unordered_map<Position, std::vector<Move>>& Checkers::getValidMoves()
 
 void Checkers::makeMove(const Move& m)
 {
+    makeMoveInternal(m, true);
+}
+
+void Checkers::makeMoveWithoutHistory(const Move& m)
+{
+    makeMoveInternal(m, false);
+}
+
+bool Checkers::undoMove()
+{
+    if (undoHistory_.empty()) {
+        return false;
+    }
+
+    GameStateSnapshot previousState = undoHistory_.back();
+    undoHistory_.pop_back();
+    if (redoHistory_.size() >= kMaxHistorySize) {
+        redoHistory_.pop_front();
+    }
+    redoHistory_.push_back(captureSnapshot());
+    restoreSnapshot(previousState);
+    return true;
+}
+
+bool Checkers::redoMove()
+{
+    if (redoHistory_.empty()) {
+        return false;
+    }
+
+    GameStateSnapshot nextState = redoHistory_.back();
+    redoHistory_.pop_back();
+    if (undoHistory_.size() >= kMaxHistorySize) {
+        undoHistory_.pop_front();
+    }
+    undoHistory_.push_back(captureSnapshot());
+    restoreSnapshot(nextState);
+    return true;
+}
+
+bool Checkers::canUndo() const
+{
+    return !undoHistory_.empty();
+}
+
+bool Checkers::canRedo() const
+{
+    return !redoHistory_.empty();
+}
+
+void Checkers::makeMoveInternal(const Move& m, bool trackHistory)
+{
     assert(board_(m.from).getColour() == currentColour_);
+
+    if (trackHistory) {
+        if (undoHistory_.size() >= kMaxHistorySize) {
+            undoHistory_.pop_front();
+        }
+        undoHistory_.push_back(captureSnapshot());
+        redoHistory_.clear();
+    }
 
     // move is linked list
     const Move* move = &m;
@@ -155,6 +221,18 @@ void Checkers::makeMove(const Move& m)
         currentColour_ = COLOUR::WHITE;
     }
 
+    generateValidMoves();
+}
+
+Checkers::GameStateSnapshot Checkers::captureSnapshot() const
+{
+    return GameStateSnapshot{.board = board_, .currentColour = currentColour_};
+}
+
+void Checkers::restoreSnapshot(const GameStateSnapshot& snapshot)
+{
+    board_ = snapshot.board;
+    currentColour_ = snapshot.currentColour;
     generateValidMoves();
 }
 

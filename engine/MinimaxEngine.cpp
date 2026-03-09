@@ -90,7 +90,7 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Checkers& curBoard, bo
         for (const auto& move : moveSeries.second) {
             // Clone the current board to simulate the move
             Checkers newBoard = curBoard;
-            newBoard.makeMove(move);
+            newBoard.makeMoveWithoutHistory(move);
 
             // Recursively evaluate the new board state
             float currentScore = EvaluatePositionRecursive(depth + 1, newBoard, !isMaximizingPlayer, alpha, beta);
@@ -133,7 +133,7 @@ Move MinimaxEngine::getBestMove()
         for (const auto& move : moveSeries.second) {
             // Clone the current board to simulate the move
             Checkers newBoard = checkers_;
-            newBoard.makeMove(move);
+            newBoard.makeMoveWithoutHistory(move);
 
             // Evaluate the move using the recursive function
             float alpha = getDefaultScore(true);

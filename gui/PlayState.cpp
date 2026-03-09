@@ -15,7 +15,26 @@
 namespace
 {
 constexpr float kMoveAnimationStep = 0.05f;
+
+bool hasPrimaryShortcutModifier(const sf::Event::KeyEvent& key)
+{
+#ifdef __APPLE__
+    return key.system || key.control;
+#else
+    return key.control;
+#endif
 }
+
+bool isUndoShortcut(const sf::Event::KeyEvent& key)
+{
+    return hasPrimaryShortcutModifier(key) && !key.shift && key.code == sf::Keyboard::Z;
+}
+
+bool isRedoShortcut(const sf::Event::KeyEvent& key)
+{
+    return hasPrimaryShortcutModifier(key) && (key.code == sf::Keyboard::Y || (key.shift && key.code == sf::Keyboard::Z));
+}
+}  // namespace
 
 PlayState::PlayState(sf::RenderWindow& window, StateManager& stateManager, ResourceManager& resourceManager,
                      GameContext& gameContext) :
@@ -272,9 +291,19 @@ void PlayState::handleBoardClick(Position pos)
 
 void PlayState::handleEvent(const sf::Event& event)
 {
-    if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape) {
-        stateManager_.setActiveState(STATE_TYPE::MenuState);
-        return;
+    if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::Escape) {
+            stateManager_.setActiveState(STATE_TYPE::MenuState);
+            return;
+        }
+        if (isUndoShortcut(event.key)) {
+            undoMove();
+            return;
+        }
+        if (isRedoShortcut(event.key)) {
+            redoMove();
+            return;
+        }
     }
 
     if (event.type != sf::Event::MouseButtonPressed) {
@@ -317,6 +346,79 @@ void PlayState::updateGameResultState()
     }
 }
 
+void PlayState::synchronizeBoardFromLogic()
+{
+    boardView_ = checkers_.getCopyBoard();
+    clearSelection();
+    moveState_.clear();
+    isAwaitingChainContinuation_ = false;
+
+    if (auto result = checkers_.getResult(); result.isOver) {
+        isGameOver_ = true;
+        winnerColor_ = result.winner;
+        resultClock_.restart();
+    } else {
+        isGameOver_ = false;
+        winnerColor_ = COLOUR::WHITE;
+    }
+}
+
+void PlayState::undoMove()
+{
+    if (moveState_.inProgress || !checkers_.canUndo()) {
+        return;
+    }
+
+    bool hasChanged = false;
+    if (gameContext_.mode == MODE::COMPUTER) {
+        while (checkers_.canUndo()) {
+            if (!checkers_.undoMove()) {
+                break;
+            }
+            hasChanged = true;
+
+            // In computer mode, stop on the next turn where the human can act.
+            if (isHumanTurn()) {
+                break;
+            }
+        }
+    } else {
+        hasChanged = checkers_.undoMove();
+    }
+
+    if (hasChanged) {
+        synchronizeBoardFromLogic();
+    }
+}
+
+void PlayState::redoMove()
+{
+    if (moveState_.inProgress || !checkers_.canRedo()) {
+        return;
+    }
+
+    bool hasChanged = false;
+    if (gameContext_.mode == MODE::COMPUTER) {
+        while (checkers_.canRedo()) {
+            if (!checkers_.redoMove()) {
+                break;
+            }
+            hasChanged = true;
+
+            // In computer mode, stop when control returns to the human player.
+            if (isHumanTurn()) {
+                break;
+            }
+        }
+    } else {
+        hasChanged = checkers_.redoMove();
+    }
+
+    if (hasChanged) {
+        synchronizeBoardFromLogic();
+    }
+}
+
 Position PlayState::getLastPositionInChain(const Move& move) const
 {
     const Move* last = &move;
@@ -328,7 +430,8 @@ Position PlayState::getLastPositionInChain(const Move& move) const
 
 void PlayState::triggerComputerMoveIfNeeded()
 {
-    if (isGameOver_ || gameContext_.mode != MODE::COMPUTER || isHumanTurn() || moveState_.inProgress) {
+    if (isGameOver_ || gameContext_.mode != MODE::COMPUTER || isHumanTurn() || moveState_.inProgress ||
+        (checkers_.canRedo() && checkers_.canUndo())) {
         return;
     }
 
