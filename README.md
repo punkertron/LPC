@@ -108,14 +108,118 @@ This project is split into three main parts:
 ## Getting Started
 
 1. **Clone the Repository**
-2. **Build** (Developed on Debian 12)<br/>Make sure you have a C++20 compiler and CMake ≥ 3.25.1 installed, plus SFML (version ≥ 3.0).  
-   On Linux with the X11 backend, also install `libxi-dev` (required by SFML 3 for raw mouse input).
+2. **Build Requirements**
+   - C++20 compiler
+   - CMake `>= 3.25.1`
+   - SFML `>= 3.0`
+
+### Recommended: Build with vcpkg (Linux/macOS/Windows)
+
+This is the same approach used in CI and is the most consistent across platforms.
+
+#### Linux (Ubuntu)
+
+Install toolchain and native dependencies:
 ```bash
-mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make
+sudo apt-get update
+sudo apt-get install -y \
+  git cmake ninja-build g++ pkg-config \
+  libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev \
+  libgl1-mesa-dev libfreetype-dev libopenal-dev libflac-dev libvorbis-dev
 ```
-3. **Run**
+
+Build:
 ```bash
-./LPC
+git clone https://github.com/microsoft/vcpkg.git
+./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+./vcpkg/vcpkg install sfml:x64-linux
+
+cmake -S . -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_TOOLCHAIN_FILE="$PWD/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+  -DVCPKG_TARGET_TRIPLET=x64-linux
+cmake --build build --parallel
+./build/LPC
+```
+
+#### macOS
+
+Build:
+```bash
+git clone https://github.com/microsoft/vcpkg.git
+./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+
+# Apple Silicon:
+./vcpkg/vcpkg install sfml:arm64-osx
+
+# Intel Mac (use this instead):
+# ./vcpkg/vcpkg install sfml:x64-osx
+
+cmake -S . -B build -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_TOOLCHAIN_FILE="$PWD/vcpkg/scripts/buildsystems/vcpkg.cmake" \
+  -DVCPKG_TARGET_TRIPLET=arm64-osx
+cmake --build build --parallel
+./build/LPC
+```
+
+#### Windows (PowerShell)
+
+Build:
+```powershell
+git clone https://github.com/microsoft/vcpkg.git
+.\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+.\vcpkg\vcpkg.exe install sfml:x64-windows
+
+cmake -S . -B build -A x64 `
+  -DCMAKE_TOOLCHAIN_FILE="$pwd/vcpkg/scripts/buildsystems/vcpkg.cmake" `
+  -DVCPKG_TARGET_TRIPLET=x64-windows
+cmake --build build --config Release --parallel
+.\build\Release\LPC.exe
+```
+
+### Linux Without vcpkg
+
+#### Option A: System packages (if your distro provides SFML 3)
+
+On Debian/Ubuntu-like systems:
+```bash
+sudo apt-get update
+sudo apt-get install -y cmake g++ pkg-config libsfml-dev
+
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/LPC
+```
+
+If CMake reports SFML 2.x from distro packages, use Option B.
+
+#### Option B: Build SFML 3 from source
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  git cmake ninja-build g++ pkg-config \
+  libx11-dev libxrandr-dev libxcursor-dev libxi-dev libudev-dev \
+  libgl1-mesa-dev libfreetype-dev libopenal-dev libflac-dev libvorbis-dev
+
+git clone --branch 3.0.2 --depth 1 https://github.com/SFML/SFML.git
+cmake -S SFML -B SFML/build -G Ninja -DCMAKE_BUILD_TYPE=Release -DSFML_BUILD_EXAMPLES=OFF
+cmake --build SFML/build --parallel
+sudo cmake --install SFML/build
+
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/LPC
+```
+
+### macOS Without vcpkg (Homebrew)
+
+```bash
+brew install cmake sfml
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel
+./build/LPC
 ```
 
 ---
