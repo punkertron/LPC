@@ -105,12 +105,17 @@ private:
     sf::RectangleShape blackSquare_;
 
     // Runtime board metrics derived from board type and window size
-    int tile_;
-    float pieceRadius_;
-    float offsetForPiece_;
-    float highlightRadius_;
-    float offsetForHighlight_;
-    float offsetForQueenTexture_;
+    sf::Vector2f boardOrigin_{};  // the pixel offset of the board's top-left corner inside the window
+    float boardSizePx_{0.f};
+    float tile_{0.f};
+    float pieceRadius_{0.f};
+    float offsetForPiece_{0.f};
+    float highlightRadius_{0.f};
+    float offsetForHighlight_{0.f};
+    sf::Vector2u lastLayoutWindowSize_{};
+    int lastLayoutBoardWidth_{0};
+    int lastLayoutRadiusOffset_{0};
+    bool hasLayoutMetrics_{false};
     // True when board should be shown rotated 180 degrees for the current player (playing black against computer)
     bool isBoardFlipped_{false};
 
@@ -177,8 +182,8 @@ private:
     void initializeEngine();
     // Type-specific size tuning used to compute radius
     int getPieceRadiusOffset() const;
-    // Recompute rendering metrics after reset/checkers type change
-    void initializeBoardMetrics();
+    // Recompute rendering metrics after resize/reset/checkers type change
+    void updateLayoutMetrics();
 
 public:
     PlayState(sf::RenderWindow& window, StateManager& stateManager, ResourceManager& resourceManager,

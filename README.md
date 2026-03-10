@@ -23,6 +23,7 @@ The following checkers variants are supported:
 - **GUI**  
   - SFML-based user interface with clickable squares.  
   - Menu system to select either two-player or computer-vs-human mode, as well as difficulty/AI level.  
+  - Resizable game window with a `600x600` minimum size; board, buttons, fonts, and result screens adapt to the current window size.  
   - Visual highlights for valid moves, chain captures, and game result screens.  
   - Undo/Redo support (`Ctrl+Z` / `Cmd+Z`, `Ctrl+Y` / `Cmd+Shift+Z`).  
 
@@ -233,7 +234,8 @@ cmake --build build --parallel
 5. (Computer mode only) Select Difficulty — choose from `Novice`, `Easy`, `Medium`, `Hard`, or `Grandmaster`.
 6. Enjoy playing — click the squares to select a piece and move it. Possible moves are highlighted automatically.
 7. Use `Ctrl+Z` (`Cmd+Z` on macOS) to undo, and `Ctrl+Y` (or `Ctrl+Shift+Z` / `Cmd+Shift+Z`) to redo.
-8. Press `ESC` anytime to return to the main menu.
+8. Resize or maximize the window as needed; the board remains centered and the UI scales with the window.
+9. Press `ESC` anytime to return to the main menu.
 
 ---
 

@@ -15,6 +15,12 @@
 namespace
 {
 constexpr float kMoveAnimationStep = 0.05f;
+constexpr float kResultSpriteMaxWidthFactor = 0.7f;
+constexpr float kResultSpriteMaxHeightFactor = 0.42f;
+constexpr float kResultSpriteTopFactor = 0.2f;
+constexpr float kResultMessageGapFactor = 0.06f;
+constexpr unsigned int kMinResultMessageCharacterSize = 16;
+constexpr unsigned int kMaxResultMessageCharacterSize = 24;
 
 bool hasPrimaryShortcutModifier(const sf::Event::KeyPressed& key)
 {
@@ -34,6 +40,13 @@ bool isRedoShortcut(const sf::Event::KeyPressed& key)
 {
     return hasPrimaryShortcutModifier(key) &&
            (key.code == sf::Keyboard::Key::Y || (key.shift && key.code == sf::Keyboard::Key::Z));
+}
+
+float calculateContainedScale(const sf::Vector2u textureSize, sf::Vector2f maxSize)
+{
+    const float widthScale = maxSize.x / static_cast<float>(textureSize.x);
+    const float heightScale = maxSize.y / static_cast<float>(textureSize.y);
+    return std::min(widthScale, heightScale);
 }
 }  // namespace
 
@@ -60,7 +73,17 @@ PlayState::PlayState(sf::RenderWindow& window, StateManager& stateManager, Resou
 
 Position PlayState::getPositionOnBoardFromMouse(int x, int y) const
 {
-    return mapPos({y / tile_, x / tile_});
+    if (tile_ <= 0.f) {
+        return {-1, -1};
+    }
+
+    const float localX = static_cast<float>(x) - boardOrigin_.x;
+    const float localY = static_cast<float>(y) - boardOrigin_.y;
+    if (localX < 0.f || localY < 0.f) {
+        return {-1, -1};
+    }
+
+    return mapPos({static_cast<int>(localY / tile_), static_cast<int>(localX / tile_)});
 }
 
 Position PlayState::mapPos(Position pos) const
@@ -292,6 +315,8 @@ void PlayState::handleBoardClick(Position pos)
 
 void PlayState::handleEvent(const sf::Event& event)
 {
+    updateLayoutMetrics();
+
     if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>(); keyPressed != nullptr) {
         if (keyPressed->code == sf::Keyboard::Key::Escape) {
             stateManager_.setActiveState(STATE_TYPE::MenuState);
@@ -456,7 +481,8 @@ void PlayState::drawBoard()
     for (int row = 0; row < boardView_.getWidth(); ++row) {
         for (int col = 0; col < boardView_.getWidth(); ++col) {
             sf::RectangleShape& square = ((row + col) % 2 == 0 ? whiteSquare_ : blackSquare_);
-            square.setPosition({static_cast<float>(col * tile_), static_cast<float>(row * tile_)});
+            square.setPosition(
+                {boardOrigin_.x + static_cast<float>(col) * tile_, boardOrigin_.y + static_cast<float>(row) * tile_});
             window_.draw(square);
         }
     }
@@ -471,13 +497,16 @@ void PlayState::drawPiece(Position pos, bool isMoving)
 
     sf::CircleShape& shape = (piece.getColour() == COLOUR::WHITE ? whitePieceCircle_ : blackPieceCircle_);
     const Position displayPos = mapPos(pos);
-    sf::Vector2f currentPos(displayPos.col * tile_ + offsetForPiece_, displayPos.row * tile_ + offsetForPiece_);
+    sf::Vector2f currentPos(boardOrigin_.x + static_cast<float>(displayPos.col) * tile_ + offsetForPiece_,
+                            boardOrigin_.y + static_cast<float>(displayPos.row) * tile_ + offsetForPiece_);
 
     if (isMoving) {
         const Position displayFrom = mapPos(moveState_.from);
         const Position displayTo = mapPos(moveState_.to);
-        const sf::Vector2f startPos(displayFrom.col * tile_ + offsetForPiece_, displayFrom.row * tile_ + offsetForPiece_);
-        const sf::Vector2f endPos(displayTo.col * tile_ + offsetForPiece_, displayTo.row * tile_ + offsetForPiece_);
+        const sf::Vector2f startPos(boardOrigin_.x + static_cast<float>(displayFrom.col) * tile_ + offsetForPiece_,
+                                    boardOrigin_.y + static_cast<float>(displayFrom.row) * tile_ + offsetForPiece_);
+        const sf::Vector2f endPos(boardOrigin_.x + static_cast<float>(displayTo.col) * tile_ + offsetForPiece_,
+                                  boardOrigin_.y + static_cast<float>(displayTo.row) * tile_ + offsetForPiece_);
 
         moveState_.animationProgress += kMoveAnimationStep;
         const float t = std::min(moveState_.animationProgress, 1.0f);
@@ -489,7 +518,14 @@ void PlayState::drawPiece(Position pos, bool isMoving)
 
     if (piece.isQueen()) {
         sf::Sprite sprite(resourceManager_.getQueenTexture());
-        sprite.setPosition(currentPos + sf::Vector2f(offsetForQueenTexture_, offsetForQueenTexture_));
+        const auto textureSize = resourceManager_.getQueenTexture().getSize();
+        const float queenTargetSize = std::max(1.f, pieceRadius_ * 1.4f);
+        const float queenScale = calculateContainedScale(textureSize, {queenTargetSize, queenTargetSize});
+        const sf::Vector2f queenSize{static_cast<float>(textureSize.x) * queenScale,
+                                     static_cast<float>(textureSize.y) * queenScale};
+        sprite.setScale({queenScale, queenScale});
+        sprite.setPosition(currentPos +
+                           sf::Vector2f((2.f * pieceRadius_ - queenSize.x) / 2.f, (2.f * pieceRadius_ - queenSize.y) / 2.f));
         window_.draw(sprite);
     }
 }
@@ -497,7 +533,8 @@ void PlayState::drawPiece(Position pos, bool isMoving)
 void PlayState::drawCapturedPiece(Position pos)
 {
     const Position displayPos = mapPos(pos);
-    capturedPieceCircle_.setPosition({displayPos.col * tile_ + offsetForPiece_, displayPos.row * tile_ + offsetForPiece_});
+    capturedPieceCircle_.setPosition({boardOrigin_.x + static_cast<float>(displayPos.col) * tile_ + offsetForPiece_,
+                                      boardOrigin_.y + static_cast<float>(displayPos.row) * tile_ + offsetForPiece_});
     window_.draw(capturedPieceCircle_);
 }
 
@@ -525,8 +562,8 @@ void PlayState::highlightPossibleMovesFrom(Position from)
 
     for (const Position pos : positionsToHighlight) {
         const Position displayPos = mapPos(pos);
-        highlightCircle_.setPosition(
-            {displayPos.col * tile_ + offsetForHighlight_, displayPos.row * tile_ + offsetForHighlight_});
+        highlightCircle_.setPosition({boardOrigin_.x + static_cast<float>(displayPos.col) * tile_ + offsetForHighlight_,
+                                      boardOrigin_.y + static_cast<float>(displayPos.row) * tile_ + offsetForHighlight_});
         window_.draw(highlightCircle_);
     }
 }
@@ -566,7 +603,8 @@ void PlayState::drawPieces()
 
 void PlayState::renderResult()
 {
-    sf::RectangleShape greyOverlay(sf::Vector2f{Game::WINDOW_WIDTH, Game::WINDOW_WIDTH});
+    const sf::Vector2u windowSize = window_.getSize();
+    sf::RectangleShape greyOverlay(sf::Vector2f{static_cast<float>(windowSize.x), static_cast<float>(windowSize.y)});
     greyOverlay.setFillColor(sf::Color{128, 128, 128, 190});
     window_.draw(greyOverlay);
 
@@ -577,15 +615,27 @@ void PlayState::renderResult()
             : resourceManager_.getColourWinsTexture(winnerColor_);
     sf::Sprite sprite{resultTexture};
 
-    const sf::Vector2f spritePos{(Game::WINDOW_WIDTH - sprite.getGlobalBounds().size.x) / 2.f, 150.f};
+    const float spriteScale = calculateContainedScale(
+        resultTexture.getSize(), {boardSizePx_ * kResultSpriteMaxWidthFactor, boardSizePx_ * kResultSpriteMaxHeightFactor});
+    const sf::Vector2f spriteSize{static_cast<float>(resultTexture.getSize().x) * spriteScale,
+                                  static_cast<float>(resultTexture.getSize().y) * spriteScale};
+    sprite.setScale({spriteScale, spriteScale});
+
+    const sf::Vector2f spritePos{(static_cast<float>(windowSize.x) - spriteSize.x) / 2.f,
+                                 boardOrigin_.y + boardSizePx_ * kResultSpriteTopFactor};
     sprite.setPosition(spritePos);
     window_.draw(sprite);
 
     if (resultClock_.getElapsedTime().asSeconds() > 2) {
-        sf::Text message{resourceManager_.getFont(), "Press Esc to return to the menu", 16};
+        const auto messageCharacterSize =
+            static_cast<unsigned int>(std::clamp(boardSizePx_ * 0.03f, static_cast<float>(kMinResultMessageCharacterSize),
+                                                 static_cast<float>(kMaxResultMessageCharacterSize)));
+        sf::Text message{resourceManager_.getFont(), "Press Esc to return to the menu", messageCharacterSize};
         message.setFillColor(sf::Color::White);
-        message.setPosition({(600.f - message.getGlobalBounds().size.x) / 2.f,
-                             sprite.getGlobalBounds().size.y + sprite.getPosition().y + 20.f});
+        const auto messageBounds = message.getLocalBounds();
+        message.setPosition(
+            {(static_cast<float>(windowSize.x) - messageBounds.size.x) / 2.f - messageBounds.position.x,
+             spritePos.y + spriteSize.y + boardSizePx_ * kResultMessageGapFactor - messageBounds.position.y});
         window_.draw(message);
     }
 }
@@ -646,6 +696,7 @@ void PlayState::processMoveAnimation()
 
 void PlayState::render()
 {
+    updateLayoutMetrics();
     drawBoard();
     drawPieces();
     drawHighlights();
@@ -689,22 +740,42 @@ int PlayState::getPieceRadiusOffset() const
     }
 }
 
-void PlayState::initializeBoardMetrics()
+void PlayState::updateLayoutMetrics()
 {
-    tile_ = Game::WINDOW_WIDTH / boardView_.getWidth();
-    const int offsetForRadius = getPieceRadiusOffset();
+    const int boardWidth = boardView_.getWidth();
+    if (boardWidth <= 0) {
+        return;
+    }
 
-    pieceRadius_ = (tile_ - offsetForRadius) / 2.0f;
-    offsetForPiece_ = (tile_ - 2 * pieceRadius_) / 2.0f;
+    const sf::Vector2u windowSize = window_.getSize();
+    const int radiusOffset = getPieceRadiusOffset();
+    if (hasLayoutMetrics_ && windowSize == lastLayoutWindowSize_ && boardWidth == lastLayoutBoardWidth_ &&
+        radiusOffset == lastLayoutRadiusOffset_) {
+        return;
+    }
+
+    lastLayoutWindowSize_ = windowSize;
+    lastLayoutBoardWidth_ = boardWidth;
+    lastLayoutRadiusOffset_ = radiusOffset;
+    hasLayoutMetrics_ = true;
+
+    boardSizePx_ = static_cast<float>(std::min(windowSize.x, windowSize.y));
+    boardOrigin_ = {(static_cast<float>(windowSize.x) - boardSizePx_) / 2.f,
+                    (static_cast<float>(windowSize.y) - boardSizePx_) / 2.f};
+    tile_ = boardSizePx_ / static_cast<float>(boardWidth);
+
+    pieceRadius_ = std::max(1.f, (tile_ - static_cast<float>(radiusOffset)) / 2.0f);
+    offsetForPiece_ = std::max(0.f, (tile_ - 2.f * pieceRadius_) / 2.0f);
     highlightRadius_ = pieceRadius_ / 2;
-    offsetForHighlight_ = (tile_ - 2 * highlightRadius_) / 2.0f;
-    offsetForQueenTexture_ = (tile_ - 32) / 2.0f - offsetForPiece_;  // width of Texture is 32
-    assert(offsetForQueenTexture_ > 0);
+    offsetForHighlight_ = (tile_ - 2.f * highlightRadius_) / 2.0f;
 
     highlightCircle_.setRadius(highlightRadius_);
     capturedPieceCircle_.setRadius(pieceRadius_);
     whitePieceCircle_.setRadius(pieceRadius_);
     blackPieceCircle_.setRadius(pieceRadius_);
+    capturedPieceCircle_.setOutlineThickness(std::max(2.f, tile_ * 0.03f));
+    whitePieceCircle_.setOutlineThickness(std::max(2.f, tile_ * 0.04f));
+    blackPieceCircle_.setOutlineThickness(std::max(2.f, tile_ * 0.04f));
     whiteSquare_.setSize(sf::Vector2f(tile_, tile_));
     blackSquare_.setSize(sf::Vector2f(tile_, tile_));
 }
@@ -723,5 +794,5 @@ void PlayState::reset()
     winnerColor_ = COLOUR::WHITE;
 
     initializeEngine();
-    initializeBoardMetrics();
+    updateLayoutMetrics();
 }

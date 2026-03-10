@@ -44,7 +44,8 @@ private:
     void render();
 
 public:
-    static constexpr int WINDOW_WIDTH{600};
+    static constexpr unsigned int MIN_WINDOW_WIDTH{600};
+    static constexpr unsigned int MIN_WINDOW_HEIGHT{600};
 
     Game();
 
