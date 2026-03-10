@@ -4,6 +4,7 @@
 #include <array>
 #include <cassert>
 #include <memory>
+#include <ranges>
 #include <stdexcept>
 #include <utility>
 
@@ -40,7 +41,6 @@ void Checkers::reset()
 {
     // reset everything
     currentColour_ = COLOUR::WHITE;
-    // board_.reset();
 
     int lastRowBlack;
     int firstRowWhite;
@@ -116,7 +116,7 @@ void Checkers::setCheckersType(CHECKERS_TYPE ct)
 
 std::vector<Move> Checkers::getValidMoves(const Position& p) const
 {
-    if (auto it = validMoves_.find(p); it != validMoves_.end()) {
+    if (const auto it = validMoves_.find(p); it != validMoves_.end()) {
         std::vector<Move> clonedMoves;
         clonedMoves.reserve(it->second.size());
         for (const auto& move : it->second) {
@@ -148,7 +148,7 @@ bool Checkers::undoMove()
         return false;
     }
 
-    GameStateSnapshot previousState = undoHistory_.back();
+    const GameStateSnapshot previousState = undoHistory_.back();
     undoHistory_.pop_back();
     if (redoHistory_.size() >= kMaxHistorySize) {
         redoHistory_.pop_front();
@@ -164,7 +164,7 @@ bool Checkers::redoMove()
         return false;
     }
 
-    GameStateSnapshot nextState = redoHistory_.back();
+    const GameStateSnapshot nextState = redoHistory_.back();
     redoHistory_.pop_back();
     if (undoHistory_.size() >= kMaxHistorySize) {
         undoHistory_.pop_front();
@@ -270,8 +270,8 @@ bool Checkers::isWithinBoard(const Position& p) const
 static inline int findMaxCaptures(std::unordered_map<Position, std::vector<Move>>& moves)
 {
     int maxCaptures = 0;
-    for (const auto& pair : moves) {
-        for (const auto& m : pair.second) {
+    for (const auto& val : moves | std::views::values) {
+        for (const auto& m : val) {
             const Move* move = &m;
             int i = 0;
             do {
@@ -287,18 +287,16 @@ static inline int findMaxCaptures(std::unordered_map<Position, std::vector<Move>
 static inline void removeNonMaxBeatMoves(std::unordered_map<Position, std::vector<Move>>& validMoves)
 {
     int maxCaptures = findMaxCaptures(validMoves);
-    for (auto& [pos, moves] : validMoves) {
-        moves.erase(std::remove_if(moves.begin(), moves.end(),
-                                   [maxCaptures](const Move& m) {
-                                       const Move* move = &m;
-                                       int i = 0;
-                                       do {
-                                           ++i;
-                                           move = move->nextMove.get();
-                                       } while (move);
-                                       return i < maxCaptures;
-                                   }),
-                    moves.end());
+    for (auto& moves : validMoves | std::views::values) {
+        std::erase_if(moves, [maxCaptures](const Move& m) {
+            const Move* move = &m;
+            int i = 0;
+            do {
+                ++i;
+                move = move->nextMove.get();
+            } while (move);
+            return i < maxCaptures;
+        });
     }
 
     std::erase_if(validMoves, [](const auto& pair) {
@@ -334,7 +332,7 @@ void Checkers::generateValidMoves()
     }
 
     // Save only moves with the most amount of captured pieces for INTERNATIONAL, CANADIAN and BRAZILIAN
-    if (validMoves_.size() > 0 && checkersType_ != CHECKERS_TYPE::RUSSIAN) {
+    if (!validMoves_.empty() && checkersType_ != CHECKERS_TYPE::RUSSIAN) {
         removeNonMaxBeatMoves(validMoves_);
     }
 
@@ -363,18 +361,17 @@ void Checkers::addBeatMoves(const Position& p, std::vector<Move>& res) const
 
 void Checkers::findCaptures(const Position& initial, Board& boardCopy, std::vector<Move>& moves) const
 {
-    auto piece = boardCopy(initial);
+    const auto piece = boardCopy(initial);
 
     for (const auto& [dr, dc] : kMoveDirections) {
-        int enemyRow = initial.row + dr;
-        int enemyCol = initial.col + dc;
-
         if (piece.isRegular()) {
+            const int enemyRow = initial.row + dr;
+            const int enemyCol = initial.col + dc;
             if (isWithinBoard({enemyRow, enemyCol}) && boardCopy(enemyRow, enemyCol).isNotEmpty() &&
                 !boardCopy(enemyRow, enemyCol).isCaptured() &&
                 boardCopy(enemyRow, enemyCol).getColour() != piece.getColour()) {
-                int landingRow = enemyRow + dr;
-                int landingCol = enemyCol + dc;
+                const int landingRow = enemyRow + dr;
+                const int landingCol = enemyCol + dc;
 
                 if (isWithinBoard({landingRow, landingCol}) && boardCopy(landingRow, landingCol).isEmpty()) {
                     processCapture(initial, {enemyRow, enemyCol}, {landingRow, landingCol}, boardCopy, moves);
@@ -401,8 +398,8 @@ void Checkers::findCaptures(const Position& initial, Board& boardCopy, std::vect
 
                     processCapture(initial, {enemyRow, enemyCol}, {landingRow, landingCol}, boardCopy, moves);
                 }
-                // imagine sutution: queen captures one piece and can capture second piece
-                //   or can move further without capturing. The scond situation is not correct,
+                // imagine situation: queen captures one piece and can capture second piece
+                //   or can move further without capturing. The second situation is not correct,
                 //   so we remove such moves
                 removeQueenWrongMoves(initial, {enemyRow, enemyCol}, moves);
             }
@@ -410,8 +407,8 @@ void Checkers::findCaptures(const Position& initial, Board& boardCopy, std::vect
     }
 }
 
-void Checkers::processCapture(const Position& initial, const Position& enemy, const Position& landing, Board& boardCopy,
-                              std::vector<Move>& moves) const
+void Checkers::processCapture(const Position& initial, const Position& enemy, const Position& landing,
+                              const Board& boardCopy, std::vector<Move>& moves) const
 {
     auto newBoardCopy = boardCopy;
     std::swap(newBoardCopy(landing), newBoardCopy(initial));
@@ -466,18 +463,16 @@ void Checkers::removeQueenWrongMoves(const Position& initial, const Position& en
     }
 
     if (nextBeatMoveExists) {
-        moves.erase(std::remove_if(moves.begin(), moves.end(),
-                                   [&initial, &enemy](const Move& m) {
-                                       const Move* move = &m;
-                                       do {
-                                           if (move->from == initial && move->beatenPiecePos == enemy && !move->nextMove) {
-                                               return true;
-                                           }
-                                           move = move->nextMove.get();
-                                       } while (move);
-                                       return false;
-                                   }),
-                    moves.end());
+        std::erase_if(moves, [&initial, &enemy](const Move& m) {
+            const Move* move = &m;
+            do {
+                if (move->from == initial && move->beatenPiecePos == enemy && !move->nextMove) {
+                    return true;
+                }
+                move = move->nextMove.get();
+            } while (move);
+            return false;
+        });
     }
 }
 
@@ -493,15 +488,15 @@ void Checkers::addNonBeatMoves(const Position& p, std::vector<Move>& res) const
 void Checkers::addOneStepMoves(const Position& p, std::vector<Move>& res) const
 {
     // check left and right moves for both sides
-    COLOUR c = board_(p).getColour();
-    int nextRow = p.row + (c == COLOUR::BLACK ? 1 : -1);
-    if (int nextCol = p.col + 1; isWithinBoard({nextRow, nextCol}) && board_(nextRow, nextCol).isEmpty()) {
+    const COLOUR c = board_(p).getColour();
+    const int nextRow = p.row + (c == COLOUR::BLACK ? 1 : -1);
+    if (const int nextCol = p.col + 1; isWithinBoard({nextRow, nextCol}) && board_(nextRow, nextCol).isEmpty()) {
         res.push_back({
             .from{p.row,   p.col  },
             .to{nextRow, nextCol}
         });
     }
-    if (int nextCol = p.col - 1; isWithinBoard({nextRow, nextCol}) && board_(nextRow, nextCol).isEmpty()) {
+    if (const int nextCol = p.col - 1; isWithinBoard({nextRow, nextCol}) && board_(nextRow, nextCol).isEmpty()) {
         res.push_back({
             .from{p.row,   p.col  },
             .to{nextRow, nextCol}

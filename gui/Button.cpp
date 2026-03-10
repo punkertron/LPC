@@ -26,7 +26,7 @@ void Button::draw()
 
 void Button::setCallback(std::function<void()> func)
 {
-    callback_ = func;
+    callback_ = std::move(func);
 }
 
 void Button::handleEvent(const sf::Event& event)
@@ -42,12 +42,12 @@ void Button::handleEvent(const sf::Event& event)
 
 bool Button::isMouseOver() const
 {
-    sf::Vector2i mousePos = sf::Mouse::getPosition(window_);
-    sf::Vector2f buttonPos = shape_.getPosition();
-    sf::Vector2f buttonSize = shape_.getSize();
+    const sf::Vector2i mousePos = sf::Mouse::getPosition(window_);
+    const sf::Vector2f buttonPos = shape_.getPosition();
+    const sf::Vector2f buttonSize = shape_.getSize();
 
-    return (mousePos.x >= buttonPos.x && mousePos.x <= buttonPos.x + buttonSize.x && mousePos.y >= buttonPos.y &&
-            mousePos.y <= buttonPos.y + buttonSize.y);
+    return (static_cast<float>(mousePos.x) >= buttonPos.x && static_cast<float>(mousePos.x) <= buttonPos.x + buttonSize.x &&
+            static_cast<float>(mousePos.y) >= buttonPos.y && static_cast<float>(mousePos.y) <= buttonPos.y + buttonSize.y);
 }
 
 void Button::updateLayout()

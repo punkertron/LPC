@@ -20,6 +20,7 @@
 #include <array>
 #include <cmath>
 #include <limits>
+#include <ranges>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -39,7 +40,7 @@ constexpr std::array<int, 4> maxDepthsArr = []() consteval {
     return arr;
 }();
 
-static inline int endgineModeToInt(ENGINE_MODE mode)
+static inline int engineModeToInt(ENGINE_MODE mode)
 {
     return static_cast<int>(mode);
 }
@@ -50,7 +51,7 @@ MinimaxEngine::MinimaxEngine(Checkers& checkers, ENGINE_MODE mode) :
     Engine(checkers),
     maxDepth_{mode == ENGINE_MODE::NOVICE
                   ? throw std::logic_error("MinimaxEngine doesn't implement NOVICE mode. Use Random Engine instead")
-                  : maxDepthsArr[endgineModeToInt(mode)]}
+                  : maxDepthsArr[engineModeToInt(mode)]}
 {
 }
 
@@ -64,7 +65,7 @@ static inline float getDefaultScore(bool isMaximizingPlayer)
 }
 
 // Recursive Minimax function
-float MinimaxEngine::EvaluatePositionRecursive(int depth, Checkers& curBoard, bool isMaximizingPlayer, float alpha,
+float MinimaxEngine::EvaluatePositionRecursive(int depth, const Checkers& curBoard, bool isMaximizingPlayer, float alpha,
                                                float beta)
 {
     if (auto result = curBoard.getResult(); result.isOver) {
@@ -86,8 +87,8 @@ float MinimaxEngine::EvaluatePositionRecursive(int depth, Checkers& curBoard, bo
     // Initialize bestScore based on whether we're maximizing or minimizing
     float bestScore = getDefaultScore(isMaximizingPlayer);
 
-    for (const auto& moveSeries : moves) {
-        for (const auto& move : moveSeries.second) {
+    for (const auto& val : moves | std::views::values) {
+        for (const auto& move : val) {
             // Clone the current board to simulate the move
             Checkers newBoard = curBoard;
             newBoard.makeMoveWithoutHistory(move);
@@ -119,7 +120,7 @@ Move MinimaxEngine::getBestMove()
 {
     // Doesn't do anything if there is only one possible move
     const auto& moves = checkers_.getValidMoves();
-    if (moves.size() == 1 && (*moves.begin()).second.size() == 1) {
+    if (moves.size() == 1 && moves.begin()->second.size() == 1) {
         return cloneMove(moves.begin()->second[0]);
     }
 
@@ -129,8 +130,8 @@ Move MinimaxEngine::getBestMove()
 
     Move bestMove;
 
-    for (const auto& moveSeries : moves) {
-        for (const auto& move : moveSeries.second) {
+    for (const auto& val : moves | std::views::values) {
+        for (const auto& move : val) {
             // Clone the current board to simulate the move
             Checkers newBoard = checkers_;
             newBoard.makeMoveWithoutHistory(move);
@@ -140,7 +141,7 @@ Move MinimaxEngine::getBestMove()
             float beta = getDefaultScore(false);
             float currentScore = EvaluatePositionRecursive(1, newBoard, !isMaximizingPlayer, alpha, beta);
 
-            // Simulate random decision making if the moves are approximately equal in strength
+            // Simulate random decision-making if the moves are approximately equal in strength
             // This is to minimize the probability of completely identical games by making the same moves
             if (std::abs(currentScore - bestScore) < 0.5f) {
                 currentScore += dist(mt);

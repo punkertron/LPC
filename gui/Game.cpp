@@ -5,7 +5,6 @@
 
 #include "MenuState.hpp"
 #include "PlayState.hpp"
-#include "State.hpp"
 
 Game::Game() : window_{sf::VideoMode({MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT}), "LPC - Let's Play Checkers!!"}
 {

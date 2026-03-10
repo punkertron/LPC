@@ -4,12 +4,12 @@
 #include <functional>
 
 struct Position {
-    int row;
-    int col;
+    int row{-1};
+    int col{-1};
 
     friend auto operator<=>(const Position& left, const Position& right) = default;
 
-    bool isValid() const
+    [[nodiscard]] bool isValid() const
     {
         return row >= 0 && col >= 0;
     }
@@ -21,13 +21,10 @@ struct Position {
     }
 };
 
-namespace std
-{
 template <>
-struct hash<Position> {
-    size_t operator()(const Position& pos) const
+struct std::hash<Position> {
+    size_t operator()(const Position& pos) const noexcept
     {
         return hash<int>()(pos.row) ^ (hash<int>()(pos.col) << 1);
     }
-};
-}  // namespace std
+};  // namespace std

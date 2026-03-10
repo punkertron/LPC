@@ -3,6 +3,7 @@
 #include <SFML/Graphics.hpp>
 
 #include "Checkers.hpp"
+#include "Engine.hpp"
 #include "ResourceManager.hpp"
 #include "StateManager.hpp"
 
@@ -11,13 +12,11 @@ enum class MODE {
     TWO_PLAYERS,
 };
 
-enum class ENGINE_MODE;
-
 struct GameContext {
-    CHECKERS_TYPE checkersType;
-    MODE mode;
-    COLOUR playerColour;
-    ENGINE_MODE engineMode;
+    CHECKERS_TYPE checkersType{CHECKERS_TYPE::RUSSIAN};
+    MODE mode{MODE::COMPUTER};
+    COLOUR playerColour{COLOUR::WHITE};
+    ENGINE_MODE engineMode{ENGINE_MODE::GRANDMASTER};
     bool isCheckersTypeSelected{false};
     bool isModeSelected{false};
     bool isColourSelected{false};

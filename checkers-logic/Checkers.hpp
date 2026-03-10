@@ -24,24 +24,24 @@ class Checkers {
 private:
     struct GameStateSnapshot {
         Board board;
-        COLOUR currentColour;
+        COLOUR currentColour{COLOUR::WHITE};
     };
 
     Board board_;
     std::unordered_map<Position, std::vector<Move>> validMoves_;
-    COLOUR currentColour_;
-    CHECKERS_TYPE checkersType_ = CHECKERS_TYPE::RUSSIAN;
+    COLOUR currentColour_{COLOUR::WHITE};
+    CHECKERS_TYPE checkersType_{CHECKERS_TYPE::RUSSIAN};
     std::deque<GameStateSnapshot> undoHistory_{};
     std::deque<GameStateSnapshot> redoHistory_{};
 
-    bool isWithinBoard(const Position& p) const;
+    [[nodiscard]] bool isWithinBoard(const Position& p) const;
     void generateValidMoves();
-    GameStateSnapshot captureSnapshot() const;
+    [[nodiscard]] GameStateSnapshot captureSnapshot() const;
     void restoreSnapshot(const GameStateSnapshot& snapshot);
     void makeMoveInternal(const Move& m, bool trackHistory);
     void addBeatMoves(const Position& p, std::vector<Move>& res) const;
     void findCaptures(const Position& initial, Board& boardCopy, std::vector<Move>& moves) const;
-    void processCapture(const Position& initial, const Position& enemy, const Position& landing, Board& boardCopy,
+    void processCapture(const Position& initial, const Position& enemy, const Position& landing, const Board& boardCopy,
                         std::vector<Move>& moves) const;
     void removeQueenWrongMoves(const Position& initial, const Position& enemy, std::vector<Move>& moves) const;
     void addNonBeatMoves(const Position& p, std::vector<Move>& res) const;
@@ -56,21 +56,21 @@ public:
     void reset();
     void setCheckersType(CHECKERS_TYPE ct);
 
-    std::vector<Move> getValidMoves(const Position& p) const;
-    const std::unordered_map<Position, std::vector<Move>>& getValidMoves() const;
+    [[nodiscard]] std::vector<Move> getValidMoves(const Position& p) const;
+    [[nodiscard]] const std::unordered_map<Position, std::vector<Move>>& getValidMoves() const;
     void makeMove(const Move& m);
     void makeMoveWithoutHistory(const Move& m);
     bool undoMove();
     bool redoMove();
-    bool canUndo() const;
-    bool canRedo() const;
-    const Board& getBoard() const;
-    Board getCopyBoard() const;
-    COLOUR getCurrentColour() const;
+    [[nodiscard]] bool canUndo() const;
+    [[nodiscard]] bool canRedo() const;
+    [[nodiscard]] const Board& getBoard() const;
+    [[nodiscard]] Board getCopyBoard() const;
+    [[nodiscard]] COLOUR getCurrentColour() const;
 
     struct GameResult {
         bool isOver;
         COLOUR winner;
     };
-    GameResult getResult() const;
+    [[nodiscard]] GameResult getResult() const;
 };

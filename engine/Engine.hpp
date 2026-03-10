@@ -17,7 +17,7 @@ protected:
     Checkers& checkers_;
 
 public:
-    Engine(Checkers& checkers) : checkers_{checkers}
+    explicit Engine(Checkers& checkers) : checkers_{checkers}
     {
     }
 

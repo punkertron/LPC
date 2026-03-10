@@ -12,7 +12,7 @@ private:
     std::mt19937 mt{std::random_device{}()};
     std::uniform_real_distribution<float> dist{-0.3f, 0.3f};
 
-    float EvaluatePositionRecursive(int depth, Checkers& curBoard, bool isMaximizingPlayer, float alpha, float beta);
+    float EvaluatePositionRecursive(int depth, const Checkers& curBoard, bool isMaximizingPlayer, float alpha, float beta);
 
 public:
     MinimaxEngine(Checkers& checkers, ENGINE_MODE mode);

@@ -148,8 +148,8 @@ float evaluatePosition(const Board& board)
     float whiteSum{0};
     float blackSum{0};
 
-    int n = board.getWidth();
-    BOARD_TYPE bt = board.getBoardType();
+    const int n = board.getWidth();
+    const BOARD_TYPE bt = board.getBoardType();
     for (int i = 0; i < n; ++i) {
         for (int j = (i % 2 ? 0 : 1); j < n; j += 2) {
             if (auto piece = board(i, j); piece.isNotEmpty()) {

@@ -1,7 +1,6 @@
 #include "PlayState.hpp"
 
 #include <algorithm>
-#include <cassert>
 #include <stdexcept>
 #include <utility>
 
@@ -548,8 +547,7 @@ void PlayState::highlightPossibleMovesFrom(Position from)
                 // Highlight the whole continuation chain from the currently selected origin
                 const Move* continuation = move;
                 do {
-                    if (std::find(positionsToHighlight.begin(), positionsToHighlight.end(), continuation->to) ==
-                        positionsToHighlight.end()) {
+                    if (std::ranges::find(positionsToHighlight, continuation->to) == positionsToHighlight.end()) {
                         positionsToHighlight.push_back(continuation->to);
                     }
                     continuation = continuation->nextMove.get();
@@ -642,7 +640,7 @@ void PlayState::renderResult()
 
 void PlayState::commitResolvedMoveIfNeeded()
 {
-    if (moveState_.inProgress || !moveState_.hasResolvedPath) {
+    if (!moveState_.hasResolvedPath) {
         return;
     }
 
@@ -655,9 +653,7 @@ void PlayState::commitResolvedMoveIfNeeded()
 
 void PlayState::processMoveAnimation()
 {
-    if (moveState_.inProgress) {
-        drawPiece(moveState_.from, true);
-    }
+    drawPiece(moveState_.from, true);
 
     if (moveState_.animationProgress < 1.f) {
         return;

@@ -1,8 +1,8 @@
 #include "RandomEngine.hpp"
 
+#include <ranges>
 #include <stdexcept>
 #include <unordered_map>
-#include <utility>
 #include <vector>
 
 #include "Checkers.hpp"
@@ -14,12 +14,12 @@ RandomEngine::RandomEngine(Checkers& checkers) : Engine(checkers)
 Move RandomEngine::getBestMove()
 {
     const auto& validMoves = checkers_.getValidMoves();
-    if (int size = validMoves.size(); size > 0) {
-        int moveIndex = mt() % size;
+    if (const auto size = validMoves.size(); size > 0) {
+        const auto moveIndex = mt() % size;
         int i = 0;
-        for (auto cit = validMoves.cbegin(), cend = validMoves.cend(); cit != cend; ++cit) {
-            if (i == moveIndex) {
-                return cloneMove(cit->second[mt() % cit->second.size()]);
+        for (const auto& moves : validMoves | std::views::values) {
+            if (i == static_cast<int>(moveIndex)) {
+                return cloneMove(moves[mt() % moves.size()]);
             }
             ++i;
         }

@@ -25,7 +25,7 @@ constexpr std::string_view FONT_FILENAME = "Sixtyfour-Regular.ttf";
 
 static std::filesystem::path getExecutablePath()
 {
-    char buffer[2048];
+    char buffer[4096];
 
 #if defined(_WIN32)
     GetModuleFileName(NULL, buffer, sizeof(buffer));

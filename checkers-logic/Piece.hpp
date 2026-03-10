@@ -15,18 +15,18 @@ private:
         CAPTURED,
     };
 
-    PIECE_TYPE pt_;
+    PIECE_TYPE pt_{PIECE_TYPE::EMPTY};
 
 public:
-    bool isEmpty() const;
-    bool isNotEmpty() const;
-    COLOUR getColour() const;
+    [[nodiscard]] bool isEmpty() const;
+    [[nodiscard]] bool isNotEmpty() const;
+    [[nodiscard]] COLOUR getColour() const;
     void setEmpty();
     void setBlackRegular();
     void setWhiteRegular();
-    bool isRegular() const;
-    bool isQueen() const;
-    bool isCaptured() const;
+    [[nodiscard]] bool isRegular() const;
+    [[nodiscard]] bool isQueen() const;
+    [[nodiscard]] bool isCaptured() const;
     void setCaptured();
     void promoteToQueen();
 };

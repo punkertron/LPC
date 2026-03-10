@@ -5,7 +5,6 @@
 #include "Checkers.hpp"
 #include "Engine.hpp"
 #include "Game.hpp"
-#include "Piece.hpp"
 #include "ResourceManager.hpp"
 #include "StateManager.hpp"
 

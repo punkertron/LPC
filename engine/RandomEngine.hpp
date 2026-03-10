@@ -12,6 +12,6 @@ private:
     std::mt19937 mt{std::random_device{}()};
 
 public:
-    RandomEngine(Checkers& checkers);
+    explicit RandomEngine(Checkers& checkers);
     Move getBestMove() override;
 };
