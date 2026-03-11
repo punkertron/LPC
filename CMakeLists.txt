@@ -26,7 +26,7 @@ if(APPLE AND NOT DEFINED SFML_DIR)
     endforeach()
 endif()
 
-find_package(SFML 3 CONFIG REQUIRED COMPONENTS Graphics Window System)
+find_package(SFML 3 CONFIG REQUIRED COMPONENTS Audio Graphics Window System)
 
 add_subdirectory(checkers-logic)
 add_subdirectory(engine)
@@ -42,6 +42,8 @@ set(LPC_RESOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/you_win.png
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/white_wins.png
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/black_wins.png
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources/win_sound.wav
+    ${CMAKE_CURRENT_SOURCE_DIR}/resources/lost_sound.wav
     ${CMAKE_CURRENT_SOURCE_DIR}/resources/Sixtyfour-Regular.ttf
 )
 

@@ -25,6 +25,7 @@ The following checkers variants are supported:
   - Menu system to select either two-player or computer-vs-human mode, as well as difficulty/AI level.  
   - Resizable game window with a `600x600` minimum size; board, buttons, fonts, and result screens adapt to the current window size.  
   - Visual highlights for valid moves, chain captures, and game result screens.  
+  - End-of-game sounds in computer mode: `win_sound.wav` when the player wins and `lost_sound.wav` when the player loses.  
   - Undo/Redo support (`Ctrl+Z` / `Cmd+Z`, `Ctrl+Y` / `Cmd+Shift+Z`).  
 
 - **State Machine**  
@@ -73,7 +74,7 @@ This project is split into three main parts:
    - **`StateManager`**: Maintains a stack of states.  
    - **`MenuState`**: Lets user select mode (two-player or vs. AI), color for player, and AI difficulty.  
    - **`PlayState`**: Renders the board, pieces, handles user input, and orchestrates moves from the chosen `Engine`.  
-   - **`ResourceManager`**: Loads and provides textures and fonts.  
+   - **`ResourceManager`**: Loads and provides textures, sounds, and fonts.  
    - **`Button`**: Simple clickable UI element.  
 <br/>
 
@@ -235,7 +236,8 @@ cmake --build build --parallel
 6. Enjoy playing — click the squares to select a piece and move it. Possible moves are highlighted automatically.
 7. Use `Ctrl+Z` (`Cmd+Z` on macOS) to undo, and `Ctrl+Y` (or `Ctrl+Shift+Z` / `Cmd+Shift+Z`) to redo.
 8. Resize or maximize the window as needed; the board remains centered and the UI scales with the window.
-9. Press `ESC` anytime to return to the main menu.
+9. In computer mode, the game plays a short sound when the final result screen appears.
+10. Press `ESC` anytime to return to the main menu.
 
 ---
 
@@ -253,7 +255,7 @@ cmake --build build --parallel
 4. **UI Enhancements**
     - ~~Turn the board around if playing for black against the computer.~~ Done! 🎊
     - Animate piece captures more smoothly.
-    - Add sounds and a game timer.
+    - Add a game timer.
 
 5. **Automated Testing**
     - Add unit tests for critical Board methods and engine functionality.

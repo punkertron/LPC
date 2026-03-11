@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <memory>
 #include <vector>
@@ -94,6 +95,9 @@ private:
     COLOUR winnerColor_{COLOUR::WHITE};
     // Timer controlling delayed "Press Esc" hint
     sf::Clock resultClock_{};
+    // One-shot sounds for computer-mode game results
+    sf::Sound winSound_;
+    sf::Sound lostSound_;
 
     // Reused drawable primitives to avoid per-frame allocations
     sf::CircleShape highlightCircle_;
@@ -170,6 +174,12 @@ private:
 
     // Read game result from logic and update UI state
     void updateGameResultState();
+    // Enter the game-over state and play computer-mode feedback once
+    void enterGameOverState(COLOUR winner);
+    // Play the proper result sound for computer mode
+    void playComputerResultSound();
+    // Stop any currently playing result sounds
+    void stopResultSounds();
     // Sync rendering state with authoritative Checkers state after history navigation
     void synchronizeBoardFromLogic();
     // Handle undo shortcut

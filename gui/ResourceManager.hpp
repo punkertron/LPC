@@ -1,5 +1,6 @@
 #pragma once
 
+#include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 
 enum class COLOUR;
@@ -11,6 +12,8 @@ private:
     sf::Texture youWin_;
     sf::Texture blackWins_;
     sf::Texture whiteWins_;
+    sf::SoundBuffer winSound_;
+    sf::SoundBuffer lostSound_;
     sf::Font font_;
 
 public:
@@ -20,5 +23,7 @@ public:
     const sf::Texture& getYouLostTexture() const;
     const sf::Texture& getYouWinTexture() const;
     const sf::Texture& getColourWinsTexture(COLOUR c) const;
+    const sf::SoundBuffer& getWinSoundBuffer() const;
+    const sf::SoundBuffer& getLostSoundBuffer() const;
     const sf::Font& getFont() const;
 };

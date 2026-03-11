@@ -21,6 +21,8 @@ constexpr std::string_view YOULOST_FILENAME = "you_lost.png";
 constexpr std::string_view YOUWIN_FILENAME = "you_win.png";
 constexpr std::string_view WHITEWINS_FILENAME = "white_wins.png";
 constexpr std::string_view BLACKWINS_FILENAME = "black_wins.png";
+constexpr std::string_view WIN_SOUND_FILENAME = "win_sound.wav";
+constexpr std::string_view LOST_SOUND_FILENAME = "lost_sound.wav";
 constexpr std::string_view FONT_FILENAME = "Sixtyfour-Regular.ttf";
 
 static std::filesystem::path getExecutablePath()
@@ -55,6 +57,11 @@ static bool loadFromPath(sf::Font& resource, const std::filesystem::path& resour
     return resource.openFromFile(resourcePath);
 }
 
+static bool loadFromPath(sf::SoundBuffer& resource, const std::filesystem::path& resourcePath)
+{
+    return resource.loadFromFile(resourcePath);
+}
+
 template <typename Resource>
 static inline void loadResource(Resource& resource, const std::filesystem::path& resourceDir, std::string_view fileName)
 {
@@ -74,6 +81,8 @@ ResourceManager::ResourceManager()
     loadResource(youWin_, exeDir, YOUWIN_FILENAME);
     loadResource(whiteWins_, exeDir, WHITEWINS_FILENAME);
     loadResource(blackWins_, exeDir, BLACKWINS_FILENAME);
+    loadResource(winSound_, exeDir, WIN_SOUND_FILENAME);
+    loadResource(lostSound_, exeDir, LOST_SOUND_FILENAME);
     loadResource(font_, exeDir, FONT_FILENAME);
 }
 
@@ -98,6 +107,16 @@ const sf::Texture& ResourceManager::getColourWinsTexture(COLOUR c) const
         return whiteWins_;
     }
     return blackWins_;
+}
+
+const sf::SoundBuffer& ResourceManager::getWinSoundBuffer() const
+{
+    return winSound_;
+}
+
+const sf::SoundBuffer& ResourceManager::getLostSoundBuffer() const
+{
+    return lostSound_;
 }
 
 const sf::Font& ResourceManager::getFont() const

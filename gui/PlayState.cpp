@@ -51,7 +51,9 @@ float calculateContainedScale(const sf::Vector2u textureSize, sf::Vector2f maxSi
 
 PlayState::PlayState(sf::RenderWindow& window, StateManager& stateManager, ResourceManager& resourceManager,
                      GameContext& gameContext) :
-    State{window, stateManager, resourceManager, gameContext}
+    State{window, stateManager, resourceManager, gameContext},
+    winSound_{resourceManager.getWinSoundBuffer()},
+    lostSound_{resourceManager.getLostSoundBuffer()}
 {
     highlightCircle_.setFillColor(sf::Color{0, 255, 0, 150});  // Semi-transparent green
     capturedPieceCircle_.setFillColor(sf::Color{128, 128, 128, 110});
@@ -318,6 +320,7 @@ void PlayState::handleEvent(const sf::Event& event)
 
     if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>(); keyPressed != nullptr) {
         if (keyPressed->code == sf::Keyboard::Key::Escape) {
+            stopResultSounds();
             stateManager_.setActiveState(STATE_TYPE::MenuState);
             return;
         }
@@ -366,10 +369,39 @@ void PlayState::updateGameResultState()
     }
 
     if (auto result = checkers_.getResult(); result.isOver) {
-        isGameOver_ = true;
-        winnerColor_ = result.winner;
-        resultClock_.restart();
+        enterGameOverState(result.winner);
     }
+}
+
+void PlayState::enterGameOverState(COLOUR winner)
+{
+    const bool shouldPlaySound = !isGameOver_ && gameContext_.mode == MODE::COMPUTER;
+
+    isGameOver_ = true;
+    winnerColor_ = winner;
+    resultClock_.restart();
+
+    if (shouldPlaySound) {
+        playComputerResultSound();
+    }
+}
+
+void PlayState::playComputerResultSound()
+{
+    stopResultSounds();
+
+    if (winnerColor_ == gameContext_.playerColour) {
+        winSound_.play();
+        return;
+    }
+
+    lostSound_.play();
+}
+
+void PlayState::stopResultSounds()
+{
+    winSound_.stop();
+    lostSound_.stop();
 }
 
 void PlayState::synchronizeBoardFromLogic()
@@ -380,12 +412,11 @@ void PlayState::synchronizeBoardFromLogic()
     isAwaitingChainContinuation_ = false;
 
     if (auto result = checkers_.getResult(); result.isOver) {
-        isGameOver_ = true;
-        winnerColor_ = result.winner;
-        resultClock_.restart();
+        enterGameOverState(result.winner);
     } else {
         isGameOver_ = false;
         winnerColor_ = COLOUR::WHITE;
+        stopResultSounds();
     }
 }
 
@@ -778,6 +809,8 @@ void PlayState::updateLayoutMetrics()
 
 void PlayState::reset()
 {
+    stopResultSounds();
+
     checkers_.setCheckersType(gameContext_.checkersType);
     checkers_.reset();
     boardView_ = checkers_.getCopyBoard();
