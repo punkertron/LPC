@@ -242,22 +242,24 @@ cmake --build build --parallel
 ---
 
 ## TODO
-1. ~~**Implement Undo / Redo**~~ Done!
+- ~~**Implement Undo / Redo**~~ Done!
     - ~~Track and revert moves for convenience.~~
 
-2. **Improve AI**
+- **Improve AI**
     - Implement a transposition table or caching.
     - Add multithreading (`Grandmaster` mode can be faster).
 
-3. **Online Multiplayer**
+- **Online Multiplayer**
     - Introduce network play for remote two-player matches.
 
-4. **UI Enhancements**
+- **UI Enhancements**
     - ~~Turn the board around if playing for black against the computer.~~ Done! 🎊
     - Animate piece captures more smoothly.
     - Add a game timer.
 
-5. **Automated Testing**
+- **Automated Testing**
     - Add unit tests for critical Board methods and engine functionality.
 
-6. **Add Documentation**
+- **Add Documentation**
+- **Record game**
+    - Game Notation, **.PDN** format - [Portable Draughts Notation](https://en.wikipedia.org/wiki/Portable_Draughts_Notation)
